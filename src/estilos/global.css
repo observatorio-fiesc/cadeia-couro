@@ -532,7 +532,8 @@ button {
   position: absolute;
   top: var(--margem);
   left: calc(var(--margem) + 6px);
-  z-index: 2;
+  /* acima dos painéis: a lista do seletor de sistema abre por cima do quadro de decomposição */
+  z-index: 30;
   pointer-events: none;
 }
 .cabeca h1 {
@@ -1321,4 +1322,96 @@ button:focus-visible {
   .barra-h {
     grid-template-columns: 110px 1fr 80px;
   }
+}
+
+/* texto de uma legenda acima da faixa (a nota da pele aberta) */
+.legenda-texto {
+  margin: 6px 0 0;
+  max-width: 440px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--traco-2);
+}
+
+/* seletor de sistema no título (como o SystemSelect do visualizador do submarino): quando a vista põe
+   o seletor, ele passa a ser o título */
+.cabeca:has(.cabeca-sistema:not(:empty)) > h1 {
+  display: none;
+}
+.cabeca-sistema {
+  pointer-events: auto;
+}
+.sistema {
+  position: relative;
+}
+.sistema-atual {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0;
+}
+.sistema-nome {
+  color: var(--traco);
+}
+.sistema-seta {
+  font-size: 11px;
+  color: var(--traco-3);
+  transform: translateY(-1px);
+}
+.sistema-atual:hover h1,
+.sistema-atual:hover .sistema-nome,
+.sistema-atual:hover .sistema-seta {
+  color: var(--realce);
+}
+.sistema-lista {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 330px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--painel-menu);
+  border: 1px solid var(--regua);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  animation: menu-sobe 0.15s ease-out both;
+}
+.sistema-lista button {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  column-gap: 10px;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  border-left: 2px solid transparent;
+  font: inherit;
+  color: var(--traco-2);
+}
+.sistema-lista button:hover {
+  color: var(--realce);
+}
+.sistema-lista button.ativo {
+  color: var(--traco);
+  background: rgba(234, 223, 203, 0.07);
+  border-left-color: var(--couro);
+}
+.sistema-codigo {
+  grid-row: span 2;
+  align-self: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--traco-3);
+}
+.sistema-op-nome {
+  font-family: var(--cond);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sistema-sobre {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--traco-3);
 }

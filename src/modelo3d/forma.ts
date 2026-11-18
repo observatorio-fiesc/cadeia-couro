@@ -52,8 +52,8 @@ export type Peca = {
 }
 
 export const REGIAO_IDX: Record<RegiaoId, number> = { pescoco: 0, paleta: 1, grupao: 2, barrigas: 3, garras: 4 }
-export const CASCA_CORPO = 0.05 // distância da linha de fora (a pele) ao corpo
-export const CASCA_PERNA = 0.032
+export const CASCA_CORPO = 0.03 // distância da linha de fora (a pele) ao corpo
+export const CASCA_PERNA = 0.02
 
 export type Modelo = {
   sexo: Sexo

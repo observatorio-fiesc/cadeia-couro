@@ -432,6 +432,136 @@ export function matCamada(textura: keyof typeof TEXTURAS, cor: string, corLado: 
   })
 }
 
+// ---------------------------------------------------------------- traço topográfico
+// Sem pintura: a forma é dada pelo contorno de tela e por muitas curvas de nível, todas com largura
+// constante em pixels. As curvas somem onde ficariam apertadas demais na tela, para não virar mancha.
+// Campos: 0 = altura no mundo (peças da pele, bota); 1 = relevo de um mapa nas faces de cima (ruído no
+// plano) e estratos nas bordas (pele aberta, camadas, filmes); 2 = posição ao longo do eixo x local
+// (anéis do fulão); 3 = o mesmo relevo do campo 1, mas sobre a própria superfície curva (atributo uvm, em
+// metros ao longo da pele): a região escolhida no animal tem o desenho da pele aberta na mesa.
+export type CampoTopo = 0 | 1 | 2 | 3
+export type OpTopo = {
+  campo?: CampoTopo
+  passo?: number // distância entre curvas: metros (campos 0 e 2) ou unidades do relevo (campo 1)
+  escala?: number // campo 1: tamanho do relevo (m)
+  contorno?: number // largura do contorno, px
+  linha?: number // largura média das curvas, px: num grupo, vão de finas a grossas em volta dela
+  grupo?: number // curvas por grupo; a última de cada grupo é a mais grossa, como a curva mestra de um mapa
+  alfaLinha?: number
+  preench?: number // véu claro por baixo das linhas
+  cor?: string
+  soCima?: boolean // descarta a face de baixo das peças com espessura (atributo lado)
+  semente?: number
+}
+export function matTopo(o: OpTopo = {}) {
+  return new THREE.ShaderMaterial({
+    uniforms: {
+      campo: { value: o.campo ?? 0 },
+      passo: { value: o.passo ?? 0.02 },
+      escala: { value: o.escala ?? 0.25 },
+      contorno: { value: o.contorno ?? 2 },
+      linha: { value: o.linha ?? 1.1 },
+      grupo: { value: o.grupo ?? 5 },
+      alfaLinha: { value: o.alfaLinha ?? 0.6 },
+      preench: { value: o.preench ?? 0.035 },
+      cor: { value: v3(o.cor ?? '#f6f1e7') },
+      corRealce: { value: v3('#cf8a52') },
+      realce: { value: 0 },
+      opac: { value: 1 },
+      soCima: { value: o.soCima ? 1 : 0 },
+      semente: { value: o.semente ?? 0 },
+    },
+    vertexShader: /* glsl */ `
+      attribute float lado;
+      attribute vec2 uvm;
+      varying vec3 vN;
+      varying vec3 vV;
+      varying vec3 vW;
+      varying vec3 vL;
+      varying vec2 vUvm;
+      varying float vLado;
+      void main() {
+        vLado = lado;
+        vUvm = uvm;
+        vL = position;
+        vec4 w = modelMatrix * vec4(position, 1.0);
+        vW = w.xyz;
+        vec4 mv = viewMatrix * w;
+        vN = normalize(normalMatrix * normal);
+        vV = -mv.xyz;
+        gl_Position = projectionMatrix * mv;
+      }`,
+    fragmentShader: /* glsl */ `
+      precision highp float;
+      uniform int campo;
+      uniform float passo;
+      uniform float escala;
+      uniform float contorno;
+      uniform float linha;
+      uniform float grupo;
+      uniform float alfaLinha;
+      uniform float preench;
+      uniform vec3 cor;
+      uniform vec3 corRealce;
+      uniform float realce;
+      uniform float opac;
+      uniform float soCima;
+      uniform float semente;
+      varying vec3 vN;
+      varying vec3 vV;
+      varying vec3 vW;
+      varying vec3 vL;
+      varying vec2 vUvm;
+      varying float vLado;
+      ${RUIDO}
+      // uma família de curvas de nível de s, a cada passo. A espessura cresce dentro de cada grupo,
+      // da curva mais fina (0,45 l) à mais grossa (2,1 l), e recomeça: um gradiente de peso, como as
+      // curvas mestras de um mapa topográfico. As grossas também são um pouco mais fortes.
+      float curvas(float s, float l) {
+        float g = s / passo;
+        float fw = max(fwidth(g), 1e-5);
+        float k = floor(g + 0.5);
+        float t = mod(k, grupo) / max(grupo - 1.0, 1.0);
+        float lk = l * mix(0.45, 2.1, t * t);
+        float d = abs(g - k) / fw;
+        float c = 1.0 - smoothstep(lk * 0.5, lk * 0.5 + 1.0, d);
+        // curvas que ficariam a menos de ~3 px umas das outras somem aos poucos; as mestras resistem mais
+        float some = 1.0 - smoothstep(0.22 + 0.2 * t, 0.42 + 0.3 * t, fw);
+        return c * some * mix(0.7, 1.0, t);
+      }
+      void main() {
+        if (soCima > 0.5 && vLado > 0.75) discard;
+        vec3 n = normalize(vN);
+        if (!gl_FrontFacing) n = -n;
+        float f = dot(n, normalize(vV));
+        float d = abs(f) / max(fwidth(f), 1e-5);
+        float lin = 1.0 - smoothstep(contorno * 0.5, contorno * 0.5 + 1.0, d);
+        float s;
+        if (campo == 1) {
+          // relevo nas faces de cima; estratos (altura local) nas bordas
+          s = vLado < 0.25 ? fbm(vL.xz / escala + semente) * 1.6 : vL.y;
+        } else if (campo == 2) {
+          s = vL.x;
+        } else if (campo == 3) {
+          s = fbm(vUvm / escala + semente) * 1.6;
+        } else {
+          // altura, com um leve desvio para as curvas não ficarem retas como régua
+          s = vW.y + (fbm(vW.xz * 9.0 + semente) - 0.5) * passo * 0.9;
+        }
+        float lp = campo == 1 && vLado >= 0.25 ? linha * 0.8 : linha;
+        // (campo 3: a borda da peça já tem o traço da casca; as curvas valem para as duas faces)
+        float topo = curvas(s, lp) * alfaLinha * (1.0 + 0.5 * realce);
+        float a = max(max(lin, topo), preench * (1.0 + 2.0 * realce));
+        vec3 c = mix(cor, corRealce, realce * (1.0 - lin * 0.6));
+        if (a * opac < 0.004) discard;
+        gl_FragColor = vec4(c, a * opac);
+      }`,
+    side: THREE.DoubleSide,
+    transparent: true,
+    depthWrite: false,
+  })
+}
+
 // ---------------------------------------------------------------- grade do chão (tela inteira) e sombra quadriculada
 export function matGrade(o: { menor: number; maior: number; alfaMenor: number; alfaMaior: number; raio: number; cor: string; preench?: number; borda?: number }) {
   return new THREE.ShaderMaterial({

@@ -14,7 +14,7 @@ import { VistaMundo } from './vistas/Mundo'
 import { VistaOrmuz } from './vistas/Ormuz'
 import { CASOS, VistaMercados, type Caso } from './vistas/Mercados'
 import { VistaModelo3D } from './vistas/Modelo3D'
-import { FONTE_CAMADAS, FONTE_DEP } from './modelo3d/receitas'
+import { FONTE_BOTA, FONTE_CAMADAS, FONTE_DEP } from './modelo3d/receitas'
 
 type Vista = 'bois' | 'cone' | 'cadeia' | 'brasil' | 'mundo' | 'ormuz' | 'mercados'
 const VISTAS: { chave: Vista; rotulo: string }[] = [
@@ -62,7 +62,8 @@ function Painel({ ctx }: { ctx: Contexto }) {
   // onde cada vista põe os próprios controles: na faixa e, acima dela, a legenda
   const [docaFaixa, setDocaFaixa] = useState<HTMLDivElement | null>(null)
   const [docaLegenda, setDocaLegenda] = useState<HTMLDivElement | null>(null)
-  const doca = useMemo(() => ({ faixa: docaFaixa, legenda: docaLegenda }), [docaFaixa, docaLegenda])
+  const [docaCabeca, setDocaCabeca] = useState<HTMLDivElement | null>(null)
+  const doca = useMemo(() => ({ faixa: docaFaixa, legenda: docaLegenda, cabeca: docaCabeca }), [docaFaixa, docaLegenda, docaCabeca])
   const aneisRef = useRef<Record<string, HTMLDivElement | null>>({})
   const nucleoRef = useRef<HTMLDivElement | null>(null)
 
@@ -121,6 +122,8 @@ function Painel({ ctx }: { ctx: Contexto }) {
     <div className={`tela vista-${vista}`}>
       <Moldura />
       <header className="cabeca">
+        {/* uma vista pode pôr aqui o seu seletor de sistema, que passa a ser o título (Modelo 3D) */}
+        <div className="cabeca-sistema" ref={setDocaCabeca} />
         <h1>Cadeia produtiva do couro</h1>
       </header>
       {vista === 'cone' && (
@@ -242,6 +245,7 @@ function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {
         <li>Regiões da pele (aba Modelo 3D): Leather Naturally (grupão grosso e de fibra densa; barriga mais fina e frouxa); Horween Leather (paleta enrugada; barriga da vaca parida mais frouxa); BREF 2013, seções 2.1.2, 2.4.3 e 3.5.2 (recorte das patas, enchimento das partes frouxas, destino das aparas)</li>
         <li>{FONTE_CAMADAS}</li>
         <li>{FONTE_DEP}</li>
+        <li>{FONTE_BOTA}</li>
       </ul>
       <h3>Definições</h3>
       <ul>

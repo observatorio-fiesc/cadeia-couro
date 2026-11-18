@@ -4,13 +4,19 @@
 import { createContext, useContext, useEffect, useRef, useState, type CSSProperties, type ReactNode } from 'react'
 import { createPortal } from 'react-dom'
 
-export type Doca = { faixa: HTMLElement | null; legenda: HTMLElement | null }
-export const DocaContext = createContext<Doca>({ faixa: null, legenda: null })
+export type Doca = { faixa: HTMLElement | null; legenda: HTMLElement | null; cabeca: HTMLElement | null }
+export const DocaContext = createContext<Doca>({ faixa: null, legenda: null, cabeca: null })
 
 /** Põe os controles de uma vista na faixa, depois dos controles gerais. */
 export function NaFaixa({ children }: { children: ReactNode }) {
   const { faixa } = useContext(DocaContext)
   return faixa ? createPortal(children, faixa) : null
+}
+
+/** Põe no título, no alto à esquerda, o seletor de sistema de uma vista (no lugar do título fixo). */
+export function NaCabeca({ children }: { children: ReactNode }) {
+  const { cabeca } = useContext(DocaContext)
+  return cabeca ? createPortal(children, cabeca) : null
 }
 
 /** Põe a legenda de uma vista acima da faixa. */

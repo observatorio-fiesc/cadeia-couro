@@ -236,6 +236,108 @@
   color: var(--couro);
 }
 
+/* rótulos das estações que se escolhem com um clique: defeitos, camadas de acabamento, peças da bota */
+.pilula.defeito,
+.pilula.filme,
+.pilula.parte {
+  pointer-events: auto;
+  cursor: pointer;
+  padding: 3px 11px 4px 4px;
+  font-size: 10.5px;
+}
+.pilula.defeito:hover,
+.pilula.filme:hover,
+.pilula.parte:hover {
+  border-color: var(--realce);
+}
+
+/* cartão "De onde vem": a cadeia do item escolhido, no canto de baixo à direita */
+.cartao-cadeia {
+  right: calc(var(--margem) + 6px);
+  bottom: var(--margem);
+  width: 330px;
+  max-height: calc(100% - var(--margem) * 2 - 60px);
+  overflow: auto;
+  animation: surge 0.35s ease-out both;
+}
+.cartao-corpo {
+  padding: 10px 14px 12px;
+}
+.cartao-corpo h3 {
+  margin: 0 0 2px;
+  font-family: var(--cond);
+  font-weight: 500;
+  font-size: 18px;
+  letter-spacing: 0.02em;
+}
+.cartao-nota {
+  margin: 0 0 8px;
+  font-size: 11px;
+  line-height: 1.45;
+  color: var(--traco-2);
+}
+.cartao-corpo section {
+  padding-top: 8px;
+  border-top: 1px solid var(--regua-2);
+}
+.cartao-corpo section + section {
+  margin-top: 8px;
+}
+.cartao-no b {
+  font-weight: 500;
+}
+.cartao-no em,
+.cartao-no small {
+  display: block;
+  font-style: normal;
+  font-size: 10px;
+  line-height: 1.4;
+  color: var(--traco-3);
+}
+.cartao-no small {
+  margin-top: 2px;
+  color: var(--traco-2);
+}
+.cartao-arvore {
+  list-style: none;
+  margin: 6px 0 0;
+  padding: 0;
+}
+.cartao-arvore li {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 2px 0;
+  font-size: 11px;
+  color: var(--traco-2);
+}
+.cartao-arvore li.indicio .cartao-nome {
+  text-decoration: underline dashed var(--traco-3);
+  text-underline-offset: 3px;
+}
+.cartao-ramo {
+  flex: none;
+  color: var(--traco-3);
+}
+.cartao-nome {
+  flex: 1;
+}
+.cartao-valor {
+  flex: none;
+  font-size: 10px;
+  color: var(--traco-3);
+  font-variant-numeric: tabular-nums;
+}
+.cartao-rodape {
+  margin: 10px 0 0;
+  font-size: 9.5px;
+  line-height: 1.4;
+  color: var(--traco-3);
+}
+.legenda-q > span {
+  cursor: pointer;
+}
+
 /* gráfico ao lado: nome e porcentagem de cada cor */
 .legenda-q > span {
   display: grid;
@@ -431,6 +533,13 @@
 }
 
 @media (max-width: 900px) {
+  .cartao-cadeia {
+    left: var(--margem);
+    right: var(--margem);
+    bottom: 60px;
+    width: auto;
+    max-height: 40%;
+  }
   .decomp-painel {
     top: 52px;
     left: var(--margem);

@@ -75,10 +75,67 @@ export type Indice = {
   dependentesDe: Map<string, number[]> // id -> índices das arestas que saem do nó
 }
 
+type Extra = { fontes: Record<string, string>; nos: (No & { insumos_indicio?: string[] })[]; arestas: Aresta[] }
+
 export async function carregarCadeia(): Promise<Cadeia> {
   const r = await fetch('./data/cadeia.json')
   if (!r.ok) throw new Error('cadeia.json não encontrado')
-  return r.json()
+  const c: Cadeia = await r.json()
+  // acréscimos que ainda não estão no gerador (public/data/cadeia-extra.json); sem o arquivo, a cadeia fica como veio
+  const e = await fetch('./data/cadeia-extra.json').then((x) => (x.ok ? (x.json() as Promise<Extra>) : null), () => null)
+  if (e) juntar(c, e)
+  return c
+}
+
+/**
+ * Junta os acréscimos à cadeia e refaz os alcances como o gerador os calcula (conferido contra os
+ * valores dele: os 101 nós de oferta batem). O universo são as etapas, insumos e materiais (camadas 1 a 3
+ * da oferta) e os artigos; a base do alcance é esse universo menos o próprio elo.
+ */
+function juntar(c: Cadeia, e: Extra) {
+  Object.assign(c.meta.fontes, e.fontes)
+  const ids = new Set(c.nos.map((n) => n.id))
+  for (const n of e.nos) if (!ids.has(n.id)) c.nos.push(n)
+  const porId = new Map(c.nos.map((n) => [n.id, n as No & { insumos_indicio?: string[] }]))
+  for (const a of e.arestas) {
+    if (!porId.has(a.de) || !porId.has(a.para)) continue
+    if (c.arestas.some((x) => x.de === a.de && x.para === a.para)) continue
+    c.arestas.push(a)
+    // o nó de destino lista o que consome, como no gerador: os indícios à parte
+    const alvo = porId.get(a.para)!
+    const lista = a.confianca === 'indício' ? (alvo.insumos_indicio ??= []) : alvo.insumos
+    if (!lista.includes(a.de)) lista.push(a.de)
+  }
+  recalcularAlcances(c)
+}
+
+export function recalcularAlcances(c: Cadeia) {
+  const porId = new Map(c.nos.map((n) => [n.id, n]))
+  const conta = (n: No) => (n.lado === 'oferta' ? n.camada >= 1 && n.camada <= 3 : n.lado === 'demanda' && n.camada === 1)
+  const base = c.nos.filter(conta).length - 1
+  const dep = new Map<string, string[]>()
+  for (const a of c.arestas) if (a.tipo !== 'visual') (dep.get(a.de) ?? dep.set(a.de, []).get(a.de)!).push(a.para)
+  const ano = '2025'
+  const exp = (id: string) => porId.get(id)?.exportacao_musd?.[ano] ?? 0
+  const totalExp = c.meta.artigos.reduce((t, a) => t + exp(a), 0) || 1
+  for (const n of c.nos) {
+    if (n.lado !== 'oferta') continue
+    const vistos = new Set<string>()
+    const fila = [n.id]
+    while (fila.length) {
+      for (const w of dep.get(fila.shift()!) ?? []) {
+        if (vistos.has(w)) continue
+        vistos.add(w)
+        fila.push(w)
+      }
+    }
+    const artigos = c.meta.artigos.filter((a) => vistos.has(a))
+    n.jusante = [...vistos].filter((x) => porId.has(x) && conta(porId.get(x)!)).length
+    n.alcance_cadeia = n.jusante / base
+    n.alcance_artigos = artigos.length / c.meta.artigos.length
+    n.alcance_exportacao = artigos.reduce((t, a) => t + exp(a), 0) / totalExp
+  }
+  c.meta.base_alcance_cadeia = base
 }
 
 export function indexar(c: Cadeia): Indice {

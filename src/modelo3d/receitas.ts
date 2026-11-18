@@ -179,15 +179,9 @@ export const FONTE_CAMADAS =
 
 // ---------------------------------------------------------------- o que mantém o animal
 export type Orgao = { id: string; n: number; nome: string; nota: string }
-export const ORGAOS: Orgao[] = [
-  { id: 'rumen', n: 1, nome: 'Rúmen', nota: 'fermenta o capim e a ração' },
-  { id: 'reticulo', n: 2, nome: 'Retículo', nota: 'devolve o bolo à boca para ruminar' },
-  { id: 'omaso', n: 3, nome: 'Omaso', nota: 'absorve água' },
-  { id: 'abomaso', n: 4, nome: 'Abomaso', nota: 'o estômago químico, com ácido' },
-  { id: 'esofago', n: 5, nome: 'Esôfago', nota: 'da boca ao rúmen' },
-  { id: 'intestino', n: 6, nome: 'Intestino grosso', nota: 'absorve água e forma as fezes' },
-  { id: 'coracao', n: 7, nome: 'Coração', nota: 'leva os nutrientes ao corpo' },
-]
+// Por enquanto, só o rúmen: é nele que entra o que o animal come. Os outros órgãos continuam no gerador
+// (interior.ts), fora do desenho.
+export const ORGAOS: Orgao[] = [{ id: 'rumen', n: 1, nome: 'Rúmen', nota: 'fermenta o capim e a ração' }]
 
 export type Insumo = { id: string; nome: string; grupo: 'alimento' | 'adubo'; cor: string; dep: Dep; depNota: string; nota: string }
 export const INSUMOS_ANIMAL: Insumo[] = [
@@ -201,15 +195,67 @@ export const INSUMOS_ANIMAL: Insumo[] = [
   { id: 'calcario', nome: 'Calcário: corrige o solo', grupo: 'adubo', cor: PALETA.apagado, dep: 'nao', depNota: 'calcário de jazidas nacionais', nota: 'corrige a acidez do solo do pasto' },
 ]
 
-// ---------------------------------------------------------------- etapas (quadro de decomposição)
-export type Modo = 'animal' | 'interior' | 'regiao' | 'pele'
-export type Etapa = { id: string; n: number; nome: string; local: string; modo?: Modo; proxima?: boolean }
+// ---------------------------------------------------------------- sistemas e etapas (quadro de decomposição)
+// Dois sistemas, escolhidos no título, como no visualizador do submarino: o boi e a vaca, de onde tudo
+// sai (o que os mantém, a pele por região, as camadas da pele, sempre perto do animal), e o sapato de
+// segurança, a ponta da cadeia, numa vista à parte.
+export type Sistema = 'animais' | 'sapato'
+export const SISTEMAS: { id: Sistema; codigo: string; nome: string; sobre: string }[] = [
+  { id: 'animais', codigo: 'MT · MS', nome: 'Boi e vaca', sobre: 'do pasto ao couro: rúmen, pele por região e camadas' },
+  { id: 'sapato', codigo: 'SC', nome: 'Sapato de segurança', sobre: 'as peças do calçado e de onde cada uma vem' },
+]
+export type Modo = 'animal' | 'interior' | 'regiao' | 'pele' | 'bota'
+export type Etapa = { id: string; n: number; nome: string; local: string; modo: Modo }
 export const ETAPAS: Etapa[] = [
   { id: 'interior', n: 1, nome: 'O que mantém o animal', local: 'pasto, ração e adubo', modo: 'interior' },
   { id: 'regiao', n: 2, nome: 'Pele por região: ribeira e curtimento', local: 'Várzea Grande (MT)', modo: 'regiao' },
   { id: 'pele', n: 3, nome: 'Camadas: divisão e recurtimento', local: 'Nova Andradina (MS)', modo: 'pele' },
-  { id: 'sc', n: 4, nome: 'Acabamento, cabedais e calçados de segurança', local: 'Caçador (SC)', proxima: true },
 ]
+
+// ---------------------------------------------------------------- calçado de segurança (SC)
+export type ParteBota = { id: string; n: number; nome: string; nota: string; nos: string[] }
+export const PARTES_BOTA: ParteBota[] = [
+  { id: 'cabedal', n: 1, nome: 'Cabedal', nota: 'couro acabado, cortado e costurado', nos: ['art.cabedais', 'ins.maquinas_costura'] },
+  { id: 'forro', n: 2, nome: 'Forro, linhas e adesivos', nota: 'o forro por dentro; a costura e a cola do cabedal', nos: ['ins.linhas_adesivos'] },
+  { id: 'biqueira', n: 3, nome: 'Biqueira', nota: 'protege os dedos: aço ou composite', nos: ['ins.biqueira'] },
+  { id: 'contraforte', n: 4, nome: 'Contraforte', nota: 'reforço do calcanhar', nos: ['ins.contraforte'] },
+  { id: 'ilhoses', n: 5, nome: 'Ilhoses e cadarço', nota: 'nos modelos de amarrar', nos: ['ins.ilhoses', 'ins.cadarcos'] },
+  { id: 'palmilha', n: 6, nome: 'Palmilha de montagem', nota: 'base onde o cabedal é montado', nos: ['ins.palmilha_montagem'] },
+  { id: 'antiperfuracao', n: 7, nome: 'Palmilha antiperfuração', nota: 'nos modelos com essa proteção', nos: ['ins.palmilha_antiperfuracao'] },
+  { id: 'solado', n: 8, nome: 'Solado de PU injetado', nota: 'injetado direto no cabedal montado', nos: ['ins.solado_pu', 'ins.injetoras_pu'] },
+]
+export const FONTE_BOTA =
+  'Calçado de segurança: a Viposa faz cabedais e calçados de segurança com solado de PU injetado (site, Exame 2026); biqueira e palmilha antiperfuração: ABNT NBR ISO 20345 e NR-6; demais componentes: literatura técnica de calçado. Forma do desenho ilustrativa.'
+
+// o que mantém o animal → nós da cadeia
+export const NOS_DO_INSUMO: Record<string, string[]> = {
+  pasto: ['mat.pastagem'],
+  racao: ['mat.racao', 'mat.graos'],
+  sal_mineral: ['mat.sal_mineral', 'mat.fosfato_bicalcico'],
+  ureia: ['mat.ureia'],
+  adubo_n: ['mat.ureia', 'ins.sulfato_amonio'],
+  adubo_p: ['mat.map', 'mat.dap'],
+  adubo_k: ['mat.kcl'],
+  calcario: ['rec.calcario'],
+}
+
+// ---------------------------------------------------------------- químicos do desenho → nós da cadeia
+// Para abrir, a partir de um químico do gráfico, de onde ele vem (cadeia.json e cadeia-extra.json).
+export const NOS_DO_QUIMICO: Record<string, string[]> = {
+  cal: ['ins.cal'],
+  sulfeto: ['ins.sulfeto_sodio'],
+  aux: ['ins.tensoativos', 'ins.enzimas'],
+  amonio: ['ins.sulfato_amonio'],
+  sal: ['ins.sal'],
+  acidos: ['ins.acido_sulfurico', 'ins.acido_formico'],
+  cromo: ['ins.sulfato_cromo'],
+  bicarb: ['ins.basificantes'],
+  neutral: ['ins.neutralizantes'],
+  recurt: ['ins.recurtentes_sinteticos', 'ins.taninos_vegetais'],
+  corantes: ['ins.corantes'],
+  engraxe: ['ins.oleos_engraxe'],
+  'cromo-sobras': ['ins.sulfato_cromo'],
+}
 
 // distribui n blocos entre categorias na proporção dos valores (maiores restos)
 export function waffle(n: number, valores: number[]): number[] {
