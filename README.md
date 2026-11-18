@@ -10,7 +10,7 @@ Painel de análise feito com dados e documentos públicos; não é publicação 
 
 | Aba | Endereço | O que mostra |
 |---|---|---|
-| Modelo 3D | `#bois` | Boi e vaca transparentes e o que mantém o animal (órgãos, alimento, adubos). Mostra também a pele por região com a química da ribeira (MT), as camadas do couro (MS) e o que cada uma pode virar. Inclui uma lente de dependência externa |
+| Modelo 3D | `#bois` | Dois sistemas, escolhidos no título. **Boi e vaca**: tudo sai dos animais: o rúmen e o que entra nele (pasto, ração, adubos); a pele por região, no próprio corpo, com a química da ribeira (MT) ao lado; as camadas do couro ao lado do animal (um toque no vão da pele) e o que cada uma pode virar (MS). **Sapato de segurança**: a bota, peça a peça (SC). Tudo em traço e curvas de nível, sem pintura; só o gráfico de composição tem cor. Cada item abre de onde vem na cadeia. Inclui uma lente de dependência externa |
 | Cone 3D | `#cone` | A cadeia de oferta em cone, com lentes: importado, Ormuz, China e confiança |
 | Cadeia | `#cadeia` | Árvore de dependências de cada elo |
 | Logística no Brasil | `#brasil` | Rotas das plantas até os portos |
@@ -83,12 +83,18 @@ cadeia-couro-viposa/
 
 | Arquivo | Papel |
 |---|---|
-| `forma.ts` | Boi e vaca desenhados por código: superfície do corpo, pernas, cabeça, regiões da pele, casca (a linha de fora) e peças arredondadas de cada região |
-| `interior.ts` | Órgãos (rúmen, retículo, omaso, abomaso, esôfago, intestino grosso e coração), o alimento no rúmen e os adubos por trás |
-| `materiais.ts` | Shaders: contorno de largura constante na tela, mistura orgânica de cores (Voronoi com domínio torcido), texturas das camadas e grade do chão |
+| `forma.ts` | Boi e vaca desenhados por código: superfície do corpo, pernas, cabeça, regiões da pele, casca (a linha de fora), peças de cada região e a pele aberta (as mesmas posições, desenroladas) |
+| `interior.ts` | Órgãos e o alimento no rúmen e os adubos por trás; o desenho mostra só o rúmen |
+| `geometria.ts` | A bota de segurança desenhada por código: solado, palmilhas, cabedal com cano, forro, biqueira, contraforte, ilhoses e cadarço |
+| `materiais.ts` | Shaders: contorno de largura constante na tela, curvas de nível (`matTopo`: altura, relevo de mapa, anéis ou relevo sobre a superfície, com peso crescente dentro de cada grupo de curvas) e grade do chão |
 | `camadas3d.ts` | Folhas onduladas e blocos da pilha de camadas |
 | `amostras.ts` | Amostras de couro desenhadas em canvas (o que cada camada pode virar) |
-| `receitas.ts` | Paleta, química por etapa, regiões, camadas, transformações, órgãos, insumos e dependência externa, com as fontes |
+| `receitas.ts` | Paleta, química por etapa, regiões, camadas, peças da bota, sistemas e etapas, e o elo de cada item com os nós da cadeia, com as fontes |
+| `lugares.ts` | Onde fica cada coisa na cena e como a câmera enquadra cada etapa na área livre da tela |
+| `cena.ts`, `estado.ts` | Traço de largura em pixels, ritmo das transições e níveis de recuo; o estado animado e os tipos da vista |
+| `Animais.tsx` | Chão, boi e vaca, rúmen, a região escolhida no lugar e a pilha de camadas ao lado do animal |
+| `Bota.tsx` | O sapato de segurança: as peças, a escolhida à frente |
+| `Palco.tsx` | Relógio das transições, câmera (camera-controls), plano da frente, gráfico de composição e rótulos, que nunca cobrem o que está em foco |
 | `Decomposicao.tsx` | Quadro de decomposição |
 
 ## Dados
@@ -98,6 +104,7 @@ Os arquivos de `public/data/` são gerados pelos scripts em Python de `../Painel
 | Arquivo | Conteúdo | Fonte |
 |---|---|---|
 | `cadeia.json` | Grafo da cadeia (nós e arestas) e comércio exterior dos insumos | Documentos públicos listados em `meta.fontes`; Comex Stat |
+| `cadeia-extra.json` | Acréscimos à cadeia ainda fora do gerador: neutralizantes, magnesita, máquinas do acabamento e do calçado, componentes da bota, celulose. Juntado na carga (`src/dados/cadeia.ts`), que refaz os alcances como o gerador (conferido: os 101 nós originais batem). Ao gerar a cadeia de novo, levar estes nós para o gerador e apagar o arquivo | Literatura técnica de curtimento e de calçado; ABNT NBR ISO 20345; NR-6 |
 | `abate.json` | Abate por categoria, por UF e trimestre | IBGE, tabela 1092 |
 | `entradas.json` | Portos e URFs de entrada dos insumos importados | Comex Stat 2025 |
 | `logistica.json` | Plantas, portos e rotas | OSRM sobre o OpenStreetMap |

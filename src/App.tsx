@@ -2,9 +2,11 @@ import { useEffect, useMemo, useRef, useState } from 'react'
 import { carregarTudo, type Contexto } from './dados/contexto'
 import { caminho } from './dados/cadeia'
 import { calcularCone } from './lib/layout'
-import { LENTES, parteGolfo, type Lente } from './lib/lentes'
+import { COR, LENTES, parteGolfo, type Lente } from './lib/lentes'
 import { Ficha } from './componentes/Ficha'
 import { PainelChina, PainelOrmuz } from './componentes/PainelLente'
+import { Moldura } from './componentes/Moldura'
+import { BotaoFaixa, DocaContext, Menu } from './componentes/Faixa'
 import { Cone } from './vistas/Cone'
 import { Arvore } from './vistas/Arvore'
 import { VistaBrasil } from './vistas/Brasil'
@@ -12,7 +14,7 @@ import { VistaMundo } from './vistas/Mundo'
 import { VistaOrmuz } from './vistas/Ormuz'
 import { CASOS, VistaMercados, type Caso } from './vistas/Mercados'
 import { VistaModelo3D } from './vistas/Modelo3D'
-import { FONTE_CAMADAS, FONTE_DEP } from './modelo3d/receitas'
+import { FONTE_BOTA, FONTE_CAMADAS, FONTE_DEP } from './modelo3d/receitas'
 
 type Vista = 'bois' | 'cone' | 'cadeia' | 'brasil' | 'mundo' | 'ormuz' | 'mercados'
 const VISTAS: { chave: Vista; rotulo: string }[] = [
@@ -25,6 +27,8 @@ const VISTAS: { chave: Vista; rotulo: string }[] = [
   { chave: 'mercados', rotulo: 'Mercados e casos' },
 ]
 const NOME_ANEL: Record<string, string> = { c0: 'Planta', c1: 'Etapas', c2: 'Insumos e capacitações', c3: 'Materiais', c4: 'Matérias-primas' }
+// cor da bolinha de cada lente no menu da faixa: a mesma matiz que a lente usa no cone
+const COR_LENTE: Partial<Record<Lente, string>> = { importado: COR.conhaque, ormuz: COR.vermelho, china: COR.ambar, confianca: COR.cru }
 
 export function App() {
   const [ctx, setCtx] = useState<Contexto | null>(null)
@@ -55,6 +59,11 @@ function Painel({ ctx }: { ctx: Contexto }) {
   const [caso, setCaso] = useState<Caso>((CASOS.find((c) => c.chave === params.get('caso'))?.chave ?? 'eua') as Caso)
   const [arvore, setArvore] = useState<string[]>(['nucleo.viposa', 'sis.curtimento', 'ins.sulfato_cromo'])
   const [fontes, setFontes] = useState(false)
+  // onde cada vista põe os próprios controles: na faixa e, acima dela, a legenda
+  const [docaFaixa, setDocaFaixa] = useState<HTMLDivElement | null>(null)
+  const [docaLegenda, setDocaLegenda] = useState<HTMLDivElement | null>(null)
+  const [docaCabeca, setDocaCabeca] = useState<HTMLDivElement | null>(null)
+  const doca = useMemo(() => ({ faixa: docaFaixa, legenda: docaLegenda, cabeca: docaCabeca }), [docaFaixa, docaLegenda, docaCabeca])
   const aneisRef = useRef<Record<string, HTMLDivElement | null>>({})
   const nucleoRef = useRef<HTMLDivElement | null>(null)
 
@@ -65,6 +74,13 @@ function Painel({ ctx }: { ctx: Contexto }) {
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSel(null)
+      // as teclas 1 a 7 levam às vistas, na ordem do menu
+      if (e.ctrlKey || e.metaKey || e.altKey || e.target instanceof HTMLInputElement) return
+      const v = VISTAS[Number(e.key) - 1]
+      if (/^[1-9]$/.test(e.key) && v) {
+        setVista(v.chave)
+        setHover(null)
+      }
     }
     const hash = () => {
       const v = vistaDoHash()
@@ -102,7 +118,14 @@ function Painel({ ctx }: { ctx: Contexto }) {
   const fichaAberta = noSel && (vista === 'cone' || vista === 'cadeia')
 
   return (
+    <DocaContext.Provider value={doca}>
     <div className={`tela vista-${vista}`}>
+      <Moldura />
+      <header className="cabeca">
+        {/* uma vista pode pôr aqui o seu seletor de sistema, que passa a ser o título (Modelo 3D) */}
+        <div className="cabeca-sistema" ref={setDocaCabeca} />
+        <h1>Cadeia produtiva do couro</h1>
+      </header>
       {vista === 'cone' && (
         <>
           <Cone
@@ -147,29 +170,31 @@ function Painel({ ctx }: { ctx: Contexto }) {
       {!fichaAberta && vista === 'cone' && lente === 'ormuz' && <PainelOrmuz cadeia={cadeia} onSelecionar={setSel} />}
       {!fichaAberta && vista === 'cone' && lente === 'china' && <PainelChina cadeia={cadeia} onSelecionar={setSel} />}
 
-      <nav className="controles">
-        {vista === 'cone' && (
-          <div className="lentes">
-            {LENTES.map((l) => (
-              <button key={l.chave} className={l.chave === lente ? 'ativo' : ''} onClick={() => setLente(l.chave)}>
-                {l.rotulo}
-              </button>
-            ))}
-          </div>
-        )}
-        <div className="vistas">
-          {VISTAS.map((v) => (
-            <button key={v.chave} className={v.chave === vista ? 'ativo' : ''} onClick={() => { setVista(v.chave); setHover(null) }}>
-              {v.rotulo}
-            </button>
-          ))}
+      <nav className="controles" aria-label="Controles">
+        <div className="controles-legenda" ref={setDocaLegenda} />
+        <div className="faixa">
+          <Menu<Vista>
+            rotulo="Vista"
+            valor={vista}
+            opcoes={VISTAS.map((v, i) => ({ chave: v.chave, rotulo: v.rotulo, tecla: i + 1 }))}
+            onEscolher={(v) => {
+              setVista(v)
+              setHover(null)
+            }}
+          />
+          {vista === 'cone' && (
+            <Menu<Lente> rotulo="Lente" valor={lente} opcoes={LENTES.map((l) => ({ chave: l.chave, rotulo: l.rotulo, cor: COR_LENTE[l.chave] }))} onEscolher={setLente} />
+          )}
+          <div className="faixa-vista" ref={setDocaFaixa} />
+          <BotaoFaixa rotulo="Fontes e definições" ligado={fontes} onClick={() => setFontes(!fontes)}>
+            <circle cx="8" cy="8" r="6" />
+            <path d="M8 7.2v4M8 4.6v.9" />
+          </BotaoFaixa>
         </div>
       </nav>
-      <button className="botao-fontes" onClick={() => setFontes(!fontes)}>
-        Fontes e definições
-      </button>
       {fontes && <Fontes ctx={ctx} onFechar={() => setFontes(false)} />}
     </div>
+    </DocaContext.Provider>
   )
 }
 
@@ -193,8 +218,18 @@ function rotulosDaLente(ctx: Contexto, lente: Lente): Set<string> {
 }
 
 function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {
+  // Esc fecha as fontes antes de qualquer passo de volta da vista
+  useEffect(() => {
+    const esc = (e: KeyboardEvent) => {
+      if (e.key !== 'Escape') return
+      e.stopImmediatePropagation()
+      onFechar()
+    }
+    window.addEventListener('keydown', esc, true)
+    return () => window.removeEventListener('keydown', esc, true)
+  }, [onFechar])
   return (
-    <div className="painel-fontes">
+    <div className="painel painel-fontes" role="dialog" aria-label="Fontes e definições">
       <button className="fechar" onClick={onFechar} aria-label="Fechar">
         ×
       </button>
@@ -210,6 +245,7 @@ function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {
         <li>Regiões da pele (aba Modelo 3D): Leather Naturally (grupão grosso e de fibra densa; barriga mais fina e frouxa); Horween Leather (paleta enrugada; barriga da vaca parida mais frouxa); BREF 2013, seções 2.1.2, 2.4.3 e 3.5.2 (recorte das patas, enchimento das partes frouxas, destino das aparas)</li>
         <li>{FONTE_CAMADAS}</li>
         <li>{FONTE_DEP}</li>
+        <li>{FONTE_BOTA}</li>
       </ul>
       <h3>Definições</h3>
       <ul>

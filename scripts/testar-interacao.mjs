@@ -38,12 +38,12 @@ console.log('hover numa região:', achou)
 if (achou) {
   await p.mouse.click(achou[0], achou[1])
   await p.waitForTimeout(9000)
-  console.log('depois do clique, etapa ativa:', (await p.locator('.decomp li.ativa .nome').first().innerText().catch(() => '-')).replace(/\s+/g, ' '))
+  console.log('depois do clique, etapa ativa:', (await p.locator('.decomp-painel [aria-current="step"] .decomp-nome').first().innerText().catch(() => '-')).replace(/\s+/g, ' '))
   console.log('rótulos do gráfico:', await p.locator('.rot.legenda-q').count())
   await p.screenshot({ path: saida + '/int_regiao.png' })
 }
 // camadas pelo quadro
-await p.locator('.decomp .linha', { hasText: 'Camadas' }).click()
+await p.locator('.decomp-painel .decomp-alvo', { hasText: 'Camadas' }).click()
 await p.waitForTimeout(9000)
 console.log('nomes de camada:', await p.locator('.rot.camada-nome').count())
 // clica no nome da raspa: abre as transformações
@@ -52,18 +52,20 @@ await p.waitForTimeout(5000)
 console.log('amostras de transformação:', await p.locator('.rot.transforma figure').count())
 await p.screenshot({ path: saida + '/int_camada.png' })
 // interior
-await p.locator('.decomp .linha', { hasText: 'O que mantém o animal' }).click()
+await p.locator('.decomp-painel .decomp-alvo', { hasText: 'O que mantém o animal' }).click()
 await p.waitForTimeout(9000)
 console.log('órgãos rotulados:', await p.locator('.rot.pilula.orgao').count(), '· insumos:', await p.locator('.rot.insumo').count())
 // lente
-await p.locator('.lente-modelo button', { hasText: 'Dependência externa' }).click()
+// a lente é um menu da faixa de controles, depois do menu da vista
+await p.locator('.faixa .menu-atual', { hasText: 'Insumos' }).click()
+await p.locator('.menu-lista button', { hasText: 'Dependência externa' }).click()
 await p.waitForTimeout(3000)
-console.log('chave da lente:', (await p.locator('.lente-modelo .chave').innerText().catch(() => '-')).replace(/\s+/g, ' '))
+console.log('chave da lente:', (await p.locator('.controles-legenda .legenda-chaves').innerText().catch(() => '-')).replace(/\s+/g, ' '))
 await p.screenshot({ path: saida + '/int_interior_lente.png' })
 // volta
 await p.keyboard.press('Escape')
 await p.waitForTimeout(7000)
-console.log('depois do Esc, etapa ativa:', (await p.locator('.decomp li.ativa .nome').first().innerText().catch(() => '-')).replace(/\s+/g, ' '))
+console.log('depois do Esc, etapa ativa:', (await p.locator('.decomp-painel [aria-current="step"] .decomp-nome').first().innerText().catch(() => '-')).replace(/\s+/g, ' '))
 await p.screenshot({ path: saida + '/int_volta.png' })
 console.log(erros.length ? 'ERROS: ' + erros.join('\n') : 'sem erros de página')
 await nav.close()

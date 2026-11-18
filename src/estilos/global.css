@@ -17,6 +17,13 @@
   --conhaque: #d0843f; /* seleção */
   --vermelho: #e5553f; /* alerta, Ormuz */
   --ambar: #e9b24a; /* China */
+  /* filetes, painéis e realce da interface, na gramática do visualizador do submarino (painel-comandante) */
+  --regua: rgba(234, 223, 203, 0.28);
+  --regua-2: rgba(234, 223, 203, 0.12);
+  --painel: rgba(20, 17, 13, 0.82);
+  --painel-menu: rgba(29, 24, 20, 0.95);
+  --realce: var(--conhaque); /* ponteiro */
+  --margem: 26px;
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --cond: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
   /* visual único e escuro, de propósito (prancha de couro): sem variação clara */
@@ -464,94 +471,372 @@ button {
   font-variant-numeric: tabular-nums;
 }
 
-/* controles: lentes (só no cone) acima das vistas */
-.controles {
+/* ---------- moldura de prancha (como a do visualizador do submarino) ---------- */
+
+.moldura {
   position: absolute;
-  bottom: 12px;
-  left: 50%;
-  transform: translateX(-50%);
+  inset: 10px;
+  z-index: 1;
+  border: 1px solid var(--regua);
+  pointer-events: none;
+}
+.moldura::after {
+  content: '';
+  position: absolute;
+  inset: 6px;
+  border: 1px solid var(--regua-2);
+}
+.moldura-colunas,
+.moldura-linhas {
+  position: absolute;
+  display: flex;
+  justify-content: space-around;
+  color: var(--traco-3);
+  font-size: 9px;
+  line-height: 1;
+}
+.moldura-colunas {
+  left: 0;
+  right: 0;
+}
+.moldura-colunas.topo {
+  top: -5px;
+}
+.moldura-colunas.base {
+  bottom: -5px;
+}
+.moldura-colunas span,
+.moldura-linhas span {
+  padding: 0 3px;
+  background: var(--fundo);
+}
+.moldura-linhas {
+  top: 0;
+  bottom: 0;
+  flex-direction: column;
+  align-items: center;
+}
+.moldura-linhas.esquerda {
+  left: -5px;
+}
+.moldura-linhas.direita {
+  right: -5px;
+}
+.moldura-linhas span {
+  padding: 3px 0;
+}
+
+/* ---------- cabeçalho: fixo e pouco lido, por isso discreto ---------- */
+
+.cabeca {
+  position: absolute;
+  top: var(--margem);
+  left: calc(var(--margem) + 6px);
+  /* acima dos painéis: a lista do seletor de sistema abre por cima do quadro de decomposição */
+  z-index: 30;
+  pointer-events: none;
+}
+.cabeca h1 {
+  margin: 2px 0 0;
+  font-family: var(--cond);
+  font-weight: 400;
+  font-size: 16px;
+  letter-spacing: 0.06em;
+  color: var(--traco-2);
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+
+/* ---------- painel: filete fino, fundo translúcido ---------- */
+
+.painel,
+.controles {
+  font-size: 12px;
+}
+/* sem especificidade: o tamanho próprio de cada botão continua valendo */
+:where(.painel, .controles) button {
+  font: inherit;
+}
+.painel {
+  position: absolute;
+  z-index: 20;
+  background: var(--painel);
+  border: 1px solid var(--regua);
+  backdrop-filter: blur(3px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--regua-2) transparent;
+}
+.painel-cabeca {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 12px;
+  padding: 9px 12px;
+  border-bottom: 1px solid var(--regua);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+}
+.painel-recolher {
+  display: inline-grid;
+  place-items: center;
+  width: 20px;
+  height: 20px;
+  margin: -4px -6px -4px 0;
+  border: 1px solid transparent;
+  color: var(--traco-3);
+  font-size: 15px;
+  line-height: 1;
+  transition:
+    color 0.15s,
+    border-color 0.15s;
+}
+.painel-recolher:hover {
+  color: var(--realce);
+  border-color: var(--regua);
+}
+/* painel recolhido: uma aba fina na borda da prancha */
+.painel-aba {
+  position: absolute;
+  z-index: 21;
   display: flex;
   flex-direction: column;
   align-items: center;
-  gap: 9px;
-  z-index: 5;
-  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+  gap: 8px;
+  width: 22px;
+  padding: 9px 0 10px;
+  background: var(--painel);
+  border: 1px solid var(--regua);
+  color: var(--traco-2);
+  backdrop-filter: blur(3px);
+  animation: surge 0.3s 0.15s ease-out both;
 }
-.vistas,
-.lentes {
-  display: flex;
-  gap: 22px;
+.painel-aba:hover {
+  color: var(--realce);
+  border-color: var(--realce);
 }
-.vistas button {
-  font-size: 11.5px;
-  letter-spacing: 0.14em;
+.painel-aba.esquerda {
+  top: 76px;
+  left: calc(var(--margem) + 6px);
+}
+.painel-aba-seta {
+  font-size: 15px;
+  line-height: 1;
+}
+.painel-aba-nome {
+  writing-mode: vertical-rl;
+  font-size: 9.5px;
+  letter-spacing: 0.16em;
   text-transform: uppercase;
-  color: var(--traco-3);
-  padding: 4px 0;
-  border-bottom: 1px solid transparent;
-  white-space: nowrap;
 }
-.lentes button {
-  font-size: 10.5px;
+@keyframes surge {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- faixa de controles: uma linha só, no canto inferior esquerdo ---------- */
+
+.controles {
+  position: absolute;
+  z-index: 20;
+  left: calc(var(--margem) + 6px);
+  bottom: var(--margem);
+  /* legendas acima; a faixa sempre no mesmo lugar, embaixo */
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 10px;
+}
+.controles-legenda:empty {
+  display: none;
+}
+.faixa {
+  display: flex;
+  align-items: stretch;
+  height: 30px;
+  border: 1px solid var(--regua);
+  background: var(--painel);
+  backdrop-filter: blur(3px);
+}
+.faixa > * + *,
+.faixa-vista > * {
+  border-left: 1px solid var(--regua-2);
+}
+/* os controles da vista entram na linha da faixa, como se fossem dela */
+.faixa-vista {
+  display: contents;
+}
+.menu {
+  position: relative;
+  display: flex;
+}
+.menu-atual {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 11px 0 9px;
+  font-size: 10px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
-  color: var(--traco-3);
-  padding: 2px 8px;
-  border: 1px solid var(--traco-4);
-  border-radius: 12px;
-}
-.vistas button:hover,
-.lentes button:hover {
   color: var(--traco);
-}
-.vistas button.ativo {
-  color: var(--traco);
-  border-bottom-color: var(--conhaque);
-}
-.lentes button.ativo {
-  color: var(--conhaque);
-  border-color: var(--conhaque);
-}
-.dica {
-  position: absolute;
-  bottom: 10px;
-  left: 50%;
-  transform: translateX(-50%);
-  font-size: 10px;
-  letter-spacing: 0.1em;
-  color: var(--traco-4);
   white-space: nowrap;
 }
-.botao-fontes {
+.menu-atual:hover {
+  color: var(--realce);
+}
+.menu-seta {
+  width: 5px;
+  height: 5px;
+  margin-left: 2px;
+  border-left: 1px solid currentColor;
+  border-top: 1px solid currentColor;
+  transform: translateY(1.5px) rotate(45deg);
+  opacity: 0.6;
+  transition: transform 0.2s ease;
+}
+.menu.aberto .menu-seta {
+  transform: translateY(-1.5px) rotate(225deg);
+}
+.menu-lista {
   position: absolute;
-  bottom: 30px;
-  left: 34px;
-  font-size: 11px;
+  bottom: calc(100% + 6px);
+  left: -1px;
+  min-width: calc(100% + 2px);
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--regua);
+  background: var(--painel-menu);
+  backdrop-filter: blur(4px);
+  animation: menu-sobe 0.18s ease-out both;
+}
+@keyframes menu-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(4px);
+  }
+}
+.menu-lista button {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  width: 100%;
+  padding: 7px 14px 7px 10px;
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--traco-2);
+  text-align: left;
+}
+.menu-lista button:hover {
+  color: var(--realce);
+}
+.menu-lista button.ativo {
+  color: var(--traco);
+  box-shadow: inset 2px 0 0 var(--couro);
+}
+.menu-ponto {
+  flex: none;
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  border: 1px solid var(--cor);
+}
+.menu-ponto.ligado {
+  background: var(--cor);
+  box-shadow: 0 0 8px var(--cor);
+}
+/* número da tecla que leva à vista */
+.tecla {
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 14px;
+  height: 14px;
+  border: 1px solid currentColor;
+  font-size: 8.5px;
+  letter-spacing: 0;
+}
+.faixa-botao {
+  display: grid;
+  place-items: center;
+  width: 32px;
+  color: var(--traco-2);
+}
+.faixa-botao:hover,
+.faixa-botao.ligado {
+  color: var(--realce);
+}
+.faixa-icone {
+  width: 14px;
+  height: 14px;
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 1.1;
+}
+
+/* legenda de uma vista, acima da faixa */
+.legenda-faixa {
+  padding: 9px 12px 10px;
+  border: 1px solid var(--regua);
+  background: var(--painel);
+  backdrop-filter: blur(3px);
+  animation: surge 0.4s ease-out both;
+}
+.legenda-titulo {
+  font-size: 10px;
   letter-spacing: 0.14em;
   text-transform: uppercase;
-  color: var(--traco-3);
 }
-.botao-fontes:hover {
-  color: var(--traco);
+.legenda-chaves {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 16px;
+  margin: 7px 0 0;
+  padding: 0;
+  list-style: none;
+  font-size: 10.5px;
+  color: var(--traco-2);
 }
+.legenda-chaves li {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+.legenda-chaves i {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+
+/* fontes e definições: abre acima da faixa */
 .painel-fontes {
-  position: absolute;
-  bottom: 62px;
-  left: 34px;
-  width: 520px;
-  padding: 14px 18px;
-  background: rgba(21, 17, 14, 0.92);
-  border-left: 1px solid var(--traco-4);
+  left: calc(var(--margem) + 6px);
+  bottom: calc(var(--margem) + 30px + 10px);
+  width: 540px;
+  max-width: calc(100% - var(--margem) * 2 - 12px);
+  max-height: calc(100% - var(--margem) * 2 - 90px);
+  overflow: auto;
+  padding: 0 0 14px;
+  background: var(--painel-menu);
+  animation: menu-sobe 0.18s ease-out both;
 }
 .painel-fontes h3 {
+  margin: 14px 18px 8px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid var(--regua);
   font-size: 10px;
-  letter-spacing: 0.2em;
-  text-transform: uppercase;
-  color: var(--traco-3);
   font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--traco-2);
 }
-.painel-fontes {
-  z-index: 6;
+.painel-fontes ul {
+  margin: 0 18px;
+}
+.painel-fontes .nota {
+  margin: 12px 18px 0;
 }
 
 /* rótulo do topo do cone (posição atualizada a cada quadro) */
@@ -1000,11 +1285,21 @@ button:focus-visible {
   .numero-grande {
     font-size: 30px;
   }
+  :root {
+    --margem: 16px;
+  }
   .leitura,
   .aneis,
   .rotulo-topo em,
-  .botao-fontes {
+  .moldura {
     display: none;
+  }
+  .cabeca {
+    left: var(--margem);
+  }
+  .painel-aba.esquerda {
+    top: 52px;
+    left: var(--margem);
   }
   .ficha {
     top: auto;
@@ -1018,18 +1313,105 @@ button:focus-visible {
     padding: 8px 4px 12px;
   }
   .controles {
-    left: 16px;
-    right: 16px;
-    transform: none;
-    bottom: 8px;
+    left: var(--margem);
+    right: var(--margem);
   }
-  .vistas,
-  .lentes {
-    flex-wrap: wrap;
-    justify-content: center;
-    gap: 6px 14px;
+  .painel-fontes {
+    left: var(--margem);
   }
   .barra-h {
     grid-template-columns: 110px 1fr 80px;
   }
+}
+
+/* texto de uma legenda acima da faixa (a nota da pele aberta) */
+.legenda-texto {
+  margin: 6px 0 0;
+  max-width: 440px;
+  font-size: 10.5px;
+  line-height: 1.5;
+  color: var(--traco-2);
+}
+
+/* seletor de sistema no título (como o SystemSelect do visualizador do submarino): quando a vista põe
+   o seletor, ele passa a ser o título */
+.cabeca:has(.cabeca-sistema:not(:empty)) > h1 {
+  display: none;
+}
+.cabeca-sistema {
+  pointer-events: auto;
+}
+.sistema {
+  position: relative;
+}
+.sistema-atual {
+  display: flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 0;
+}
+.sistema-nome {
+  color: var(--traco);
+}
+.sistema-seta {
+  font-size: 11px;
+  color: var(--traco-3);
+  transform: translateY(-1px);
+}
+.sistema-atual:hover h1,
+.sistema-atual:hover .sistema-nome,
+.sistema-atual:hover .sistema-seta {
+  color: var(--realce);
+}
+.sistema-lista {
+  position: absolute;
+  z-index: 40;
+  top: calc(100% + 6px);
+  left: 0;
+  min-width: 330px;
+  margin: 0;
+  padding: 4px 0;
+  list-style: none;
+  background: var(--painel-menu);
+  border: 1px solid var(--regua);
+  box-shadow: 0 12px 32px rgba(0, 0, 0, 0.35);
+  animation: menu-sobe 0.15s ease-out both;
+}
+.sistema-lista button {
+  display: grid;
+  grid-template-columns: 58px 1fr;
+  column-gap: 10px;
+  width: 100%;
+  padding: 7px 12px;
+  text-align: left;
+  border-left: 2px solid transparent;
+  font: inherit;
+  color: var(--traco-2);
+}
+.sistema-lista button:hover {
+  color: var(--realce);
+}
+.sistema-lista button.ativo {
+  color: var(--traco);
+  background: rgba(234, 223, 203, 0.07);
+  border-left-color: var(--couro);
+}
+.sistema-codigo {
+  grid-row: span 2;
+  align-self: center;
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--traco-3);
+}
+.sistema-op-nome {
+  font-family: var(--cond);
+  font-size: 15px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+.sistema-sobre {
+  font-size: 9.5px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--traco-3);
 }
