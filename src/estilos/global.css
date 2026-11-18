@@ -1,0 +1,1035 @@
+/* Painel Viposa: paleta própria do couro sobre a gramática do painel de defesa
+   (traço fino, texto escrito sobre a cena sem caixas, rótulos monoespaçados) */
+
+:root {
+  --fundo-1: #1d1814;
+  --fundo-2: #0e0b09;
+  --halo: #14110d;
+  --fundo: #14110d;
+  --couro: #cf8a52;
+  --linha-q: #362d23;
+  --tinta-2: #d9ccb6;
+  --tinta-3: #a8987f;
+  --traco: #eadfcb; /* couro cru */
+  --traco-2: rgba(234, 223, 203, 0.66);
+  --traco-3: rgba(234, 223, 203, 0.36);
+  --traco-4: rgba(234, 223, 203, 0.14);
+  --conhaque: #d0843f; /* seleção */
+  --vermelho: #e5553f; /* alerta, Ormuz */
+  --ambar: #e9b24a; /* China */
+  --mono: 'IBM Plex Mono', ui-monospace, monospace;
+  --cond: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
+  /* visual único e escuro, de propósito (prancha de couro): sem variação clara */
+  color-scheme: dark;
+}
+
+* {
+  box-sizing: border-box;
+}
+html,
+body,
+#root {
+  margin: 0;
+  height: 100%;
+}
+body {
+  /* mesmo fundo do painel Floresta e pecuária */
+  background: var(--fundo);
+  color: var(--traco);
+  font-family: var(--mono);
+  font-size: 13px;
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+button {
+  font-family: inherit;
+  color: inherit;
+  background: none;
+  border: 0;
+  cursor: pointer;
+}
+
+.tela {
+  position: relative;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+.cena {
+  position: absolute !important;
+  inset: 0;
+}
+.aviso-tela {
+  display: grid;
+  place-items: center;
+  height: 100vh;
+  color: var(--traco-2);
+  letter-spacing: 0.12em;
+}
+
+/* texto sobre a cena: halo no lugar de caixa */
+.cabecalho,
+.ficha,
+.aneis,
+.lentes,
+.dica,
+.botao-fontes,
+.rotulo {
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo), 0 0 1px var(--halo);
+}
+
+.sobretitulo {
+  font-size: 10.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--traco-2);
+}
+
+/* cabeçalho: número grande, leitura curta */
+.cabecalho {
+  position: absolute;
+  top: 30px;
+  left: 34px;
+  width: 300px;
+  pointer-events: none;
+}
+.cabecalho h1 {
+  font-family: var(--cond);
+  font-weight: 500;
+  font-size: 30px;
+  letter-spacing: 0.02em;
+  margin: 6px 0 18px;
+}
+.numero-grande {
+  white-space: nowrap;
+  font-family: var(--cond);
+  font-size: 48px;
+  line-height: 1;
+  font-weight: 500;
+  color: var(--traco);
+  font-variant-numeric: tabular-nums;
+}
+.rotulo-numero {
+  margin-top: 4px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--conhaque);
+}
+.leitura {
+  margin-top: 16px;
+  line-height: 1.6;
+  color: var(--traco-2);
+  font-size: 12.5px;
+}
+
+/* nomes dos anéis, à esquerda da ampulheta */
+.aneis {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.anel {
+  position: absolute;
+  top: 0;
+  left: 0;
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  white-space: nowrap;
+}
+.anel::after {
+  content: '';
+  width: 1px;
+  height: 12px;
+  background: var(--traco-3);
+  align-self: center;
+}
+.anel em {
+  font-style: normal;
+  color: var(--traco-4);
+}
+.anel-nucleo {
+  color: var(--conhaque);
+}
+.eixo-texto {
+  position: absolute;
+  right: 0;
+  font-size: 10px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  color: var(--traco-4);
+}
+.eixo-topo {
+  top: 22px;
+}
+.eixo-base {
+  bottom: 70px;
+}
+
+/* rótulos presos aos elos */
+.rotulo {
+  transform: translate(12px, -50%);
+  white-space: nowrap;
+  font-size: 11px;
+  color: var(--traco-2);
+  pointer-events: none;
+  user-select: none;
+}
+.rotulo em {
+  font-style: normal;
+  margin-left: 7px;
+  color: var(--traco);
+  font-weight: 500;
+}
+.rotulo-forte {
+  color: var(--traco);
+  font-size: 11.5px;
+}
+.rotulo-destaque {
+  color: var(--conhaque);
+  font-size: 12.5px;
+}
+.rotulo-esq {
+  transform: translate(calc(-100% - 12px), -50%);
+  text-align: right;
+}
+.rotulo {
+  transition: opacity 0.35s ease;
+}
+.rotulo-fundo {
+  opacity: 0;
+}
+/* a cintura fica sempre no centro da tela: a câmera gira em torno dela */
+.rotulo-centro {
+  position: absolute;
+  left: calc(50% + 40px);
+  top: 50%;
+  transform: translateY(-50%);
+  text-align: left;
+  pointer-events: none;
+  color: var(--conhaque);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.rotulo-centro em {
+  display: block;
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  color: var(--traco-2);
+  margin-top: 3px;
+}
+
+/* ficha do elo e painéis das lentes, à direita */
+.ficha {
+  position: absolute;
+  top: 26px;
+  right: 30px;
+  width: 390px;
+  max-height: calc(100vh - 110px);
+  overflow-y: auto;
+  padding: 4px 6px 16px 18px;
+  border-left: 1px solid var(--traco-4);
+  background: linear-gradient(90deg, rgba(21, 17, 14, 0.55), rgba(21, 17, 14, 0.15));
+  backdrop-filter: blur(3px);
+  scrollbar-width: thin;
+  scrollbar-color: var(--traco-4) transparent;
+}
+.ficha h2 {
+  font-family: var(--cond);
+  font-weight: 500;
+  font-size: 25px;
+  margin: 6px 0 4px;
+}
+.ficha p {
+  line-height: 1.55;
+  color: var(--traco-2);
+  margin: 10px 0;
+}
+.ficha .planta {
+  color: var(--conhaque);
+  font-size: 11.5px;
+  letter-spacing: 0.06em;
+}
+.ficha .gargalo {
+  color: var(--traco);
+  border-left: 2px solid var(--vermelho);
+  padding-left: 10px;
+}
+.ficha section {
+  margin-top: 18px;
+}
+.ficha h3 {
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  margin: 0 0 8px;
+}
+.fechar {
+  position: absolute;
+  top: 2px;
+  right: 6px;
+  font-size: 20px;
+  color: var(--traco-3);
+}
+.fechar:hover {
+  color: var(--traco);
+}
+.linha {
+  display: flex;
+  justify-content: space-between;
+  gap: 14px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--traco-4);
+  color: var(--traco-2);
+}
+.linha b {
+  font-weight: 500;
+  color: var(--traco);
+  text-align: right;
+  font-variant-numeric: tabular-nums;
+}
+.linha.alerta b {
+  color: var(--vermelho);
+}
+.linha-numero {
+  display: flex;
+  gap: 12px;
+  align-items: center;
+  margin-bottom: 6px;
+}
+.numero-medio {
+  font-family: var(--cond);
+  font-size: 38px;
+  color: var(--traco);
+}
+.nota {
+  font-size: 11px;
+  color: var(--traco-3) !important;
+  line-height: 1.5;
+}
+.origens {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px;
+  margin-top: 10px;
+}
+.mini {
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  margin-bottom: 4px;
+}
+.origem {
+  display: grid;
+  grid-template-columns: 1fr 38px;
+  grid-template-rows: auto 3px;
+  column-gap: 6px;
+  font-size: 11px;
+  color: var(--traco-2);
+  margin-bottom: 5px;
+}
+.origem span {
+  grid-row: 1;
+  grid-column: 1;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.origem b {
+  grid-row: 1;
+  grid-column: 2;
+  font-weight: 500;
+  text-align: right;
+  color: var(--traco);
+}
+.origem i {
+  grid-row: 2;
+  grid-column: 1 / 3;
+  height: 2px;
+  background: var(--traco-3);
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+.chip {
+  font-size: 11px;
+  padding: 3px 8px;
+  border: 1px solid var(--traco-3);
+  border-radius: 2px;
+  color: var(--traco);
+}
+.chip:hover {
+  border-color: var(--conhaque);
+  color: var(--conhaque);
+}
+.chip-fraco {
+  border-style: dashed;
+  color: var(--traco-2);
+}
+.fontes ul,
+.painel-fontes ul {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--traco-2);
+  line-height: 1.5;
+  font-size: 11px;
+}
+
+/* barras das lentes: contorno = 2025, cheia = 2026 */
+.legenda-barras {
+  display: flex;
+  gap: 16px;
+  font-size: 10.5px;
+  color: var(--traco-2);
+  margin: 10px 0 12px;
+}
+.legenda-barras i {
+  display: inline-block;
+  width: 18px;
+  height: 7px;
+  margin-right: 5px;
+  vertical-align: middle;
+}
+.legenda-barras .oma {
+  color: var(--traco-3);
+}
+.barra-item {
+  display: block;
+  width: 100%;
+  text-align: left;
+  padding: 7px 0 8px;
+  border-bottom: 1px dashed var(--traco-4);
+}
+.barra-item:hover .barra-titulo span {
+  color: var(--conhaque);
+}
+.barra-titulo {
+  display: flex;
+  justify-content: space-between;
+  font-size: 12px;
+  margin-bottom: 5px;
+}
+.barra-titulo em {
+  font-style: normal;
+  font-size: 11px;
+  color: var(--traco-2);
+}
+.barra-trilho {
+  position: relative;
+  height: 7px;
+  margin: 2px 0;
+}
+.barra-trilho i {
+  position: absolute;
+  left: 0;
+  top: 0;
+  height: 7px;
+}
+.b25 {
+  border: 1px solid var(--vermelho);
+}
+.b26 {
+  background: var(--vermelho);
+}
+.b25-oma {
+  border: 1px dashed var(--traco-2);
+  border-right: 0;
+}
+.b26-oma {
+  background: repeating-linear-gradient(90deg, var(--traco-2) 0 2px, transparent 2px 4px);
+}
+.b25.ambar {
+  border-color: var(--ambar);
+}
+.b26.ambar {
+  background: var(--ambar);
+}
+.barra-valores {
+  font-size: 11px;
+  color: var(--traco-2);
+  margin-top: 3px;
+  font-variant-numeric: tabular-nums;
+}
+
+/* controles: lentes (só no cone) acima das vistas */
+.controles {
+  position: absolute;
+  bottom: 12px;
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 9px;
+  z-index: 5;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.vistas,
+.lentes {
+  display: flex;
+  gap: 22px;
+}
+.vistas button {
+  font-size: 11.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  padding: 4px 0;
+  border-bottom: 1px solid transparent;
+  white-space: nowrap;
+}
+.lentes button {
+  font-size: 10.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  padding: 2px 8px;
+  border: 1px solid var(--traco-4);
+  border-radius: 12px;
+}
+.vistas button:hover,
+.lentes button:hover {
+  color: var(--traco);
+}
+.vistas button.ativo {
+  color: var(--traco);
+  border-bottom-color: var(--conhaque);
+}
+.lentes button.ativo {
+  color: var(--conhaque);
+  border-color: var(--conhaque);
+}
+.dica {
+  position: absolute;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  color: var(--traco-4);
+  white-space: nowrap;
+}
+.botao-fontes {
+  position: absolute;
+  bottom: 30px;
+  left: 34px;
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+}
+.botao-fontes:hover {
+  color: var(--traco);
+}
+.painel-fontes {
+  position: absolute;
+  bottom: 62px;
+  left: 34px;
+  width: 520px;
+  padding: 14px 18px;
+  background: rgba(21, 17, 14, 0.92);
+  border-left: 1px solid var(--traco-4);
+}
+.painel-fontes h3 {
+  font-size: 10px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  font-weight: 500;
+}
+.painel-fontes {
+  z-index: 6;
+}
+
+/* rótulo do topo do cone (posição atualizada a cada quadro) */
+.rotulo-topo {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  color: var(--conhaque);
+  font-size: 12px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+  white-space: nowrap;
+}
+.rotulo-topo em {
+  display: block;
+  font-style: normal;
+  font-size: 10.5px;
+  letter-spacing: 0.1em;
+  color: var(--traco-2);
+  margin-top: 3px;
+}
+
+/* selos e chips */
+.selo {
+  font-style: normal;
+  font-size: 9.5px;
+  padding: 0 4px;
+  border-radius: 2px;
+  margin-left: 4px;
+  letter-spacing: 0.04em;
+}
+.selo-golfo {
+  color: var(--vermelho);
+  border: 1px solid var(--vermelho);
+}
+.selo-china {
+  color: var(--ambar);
+  border: 1px solid var(--ambar);
+}
+.selo-confirmar {
+  color: var(--traco-2);
+  border: 1px dashed var(--traco-3);
+}
+.chip-ativo {
+  border-color: var(--conhaque);
+  color: var(--conhaque);
+}
+.lista-insumos {
+  margin-bottom: 14px;
+  padding-bottom: 6px;
+  border-bottom: 1px solid var(--traco-4);
+}
+.grupo-insumos {
+  margin-top: 8px;
+}
+
+/* árvore da cadeia */
+.arvore {
+  position: absolute;
+  inset: 0;
+}
+.arvore-linhas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.arvore-linhas .ramo {
+  stroke: var(--traco-3);
+  stroke-width: 1;
+  fill: none;
+}
+.arvore-linhas .ramo-aberto {
+  stroke: var(--conhaque);
+  stroke-width: 1.4;
+}
+.no-arvore {
+  position: absolute;
+  transform: translate(-8px, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--traco);
+  padding: 2px 4px 2px 0;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.no-arvore em {
+  font-style: normal;
+  font-size: 10.5px;
+}
+.no-arvore .circulo {
+  width: 16px;
+  height: 16px;
+  border: 1px solid var(--traco-2);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  color: var(--traco-2);
+  background: var(--fundo-1);
+  flex: none;
+}
+.no-arvore .nome {
+  font-weight: 500;
+}
+.no-arvore .uf {
+  margin-left: 6px;
+  color: var(--conhaque);
+}
+.no-arvore .codigo,
+.no-arvore .mais {
+  color: var(--traco-3);
+}
+.no-arvore .alcance {
+  color: var(--traco-2);
+}
+.no-arvore:hover .nome,
+.no-arvore.aberto .nome {
+  color: var(--conhaque);
+}
+.no-arvore.aberto .circulo {
+  border-color: var(--conhaque);
+  color: var(--conhaque);
+  background: #3a2a1c;
+}
+.no-arvore.selecionado .circulo {
+  background: var(--conhaque);
+  color: var(--fundo-2);
+}
+.no-arvore.rotulo-esquerda {
+  flex-direction: row-reverse;
+  transform: translate(calc(-100% + 8px), -50%);
+}
+
+/* mapas */
+.mapa {
+  position: absolute;
+  inset: 0;
+}
+.mapa .esfera {
+  fill: none;
+  stroke: var(--traco-4);
+}
+.mapa .ufs path {
+  fill: rgba(234, 223, 203, 0.025);
+  stroke: var(--traco-3);
+  stroke-width: 0.6;
+}
+.mapa .ufs-rotulo text {
+  fill: var(--traco-4);
+  font-size: 10px;
+  letter-spacing: 0.12em;
+  text-anchor: middle;
+}
+.mapa .rodovias path {
+  fill: none;
+  stroke: var(--traco-4);
+  stroke-width: 0.6;
+}
+.mapa .rota {
+  fill: none;
+  stroke-linecap: round;
+  cursor: pointer;
+}
+.mapa .rota-plantas {
+  stroke: var(--conhaque);
+  stroke-width: 2.4;
+}
+.mapa .rota-porto {
+  stroke: var(--traco-2);
+  stroke-width: 1.3;
+  stroke-dasharray: 5 4;
+}
+.mapa .rota.ativa {
+  stroke: var(--traco);
+  stroke-width: 3.6;
+}
+.mapa .rota-entrada {
+  fill: none;
+  stroke: var(--ambar);
+  stroke-width: 1.4;
+  stroke-dasharray: 2 3;
+}
+.mapa .porto-entrada {
+  fill: rgba(233, 178, 74, 0.16);
+  stroke: var(--ambar);
+  stroke-width: 1;
+}
+.mapa .portos rect,
+.mapa .porto-destino {
+  fill: var(--fundo-1);
+  stroke: var(--traco);
+  stroke-width: 1.2;
+}
+.mapa .rotulo-mapa {
+  fill: var(--traco-2);
+  font-size: 11px;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 3px;
+}
+.mapa .rotulo-entrada {
+  fill: var(--ambar);
+}
+.mapa .rotulo-origem {
+  fill: var(--traco);
+}
+.mapa .rotulo-rota {
+  fill: var(--conhaque);
+  font-size: 11.5px;
+  font-weight: 500;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 3px;
+}
+.mapa .rotulo-rota.ativo {
+  fill: var(--traco);
+}
+.mapa .planta-anel {
+  fill: none;
+  stroke: var(--conhaque);
+  stroke-width: 2;
+}
+.mapa .planta-centro,
+.mapa .plantas-mundo circle {
+  fill: var(--conhaque);
+}
+.mapa .rotulo-planta {
+  fill: var(--traco);
+  font-family: var(--cond);
+  font-size: 15px;
+  font-weight: 500;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 4px;
+}
+.mapa .rotulo-planta-etapas {
+  fill: var(--conhaque);
+  font-size: 10.5px;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 3px;
+}
+.mapa .paises path {
+  fill: rgba(234, 223, 203, 0.02);
+  stroke: var(--traco-3);
+  stroke-width: 0.5;
+}
+.mapa .paises .pais-brasil {
+  fill: rgba(208, 132, 63, 0.1);
+  stroke: var(--conhaque);
+}
+.mapa .paises .pais-origem {
+  stroke-width: 0.9;
+}
+.mapa .paises .pais-ormuz {
+  fill: var(--vermelho);
+  stroke: var(--vermelho);
+}
+.mapa .paises .pais-china {
+  fill: var(--ambar);
+  stroke: var(--ambar);
+}
+.mapa .paises .pais-outros {
+  fill: var(--conhaque);
+  stroke: var(--conhaque);
+}
+.mapa .paises .pais-oma {
+  fill: none;
+  stroke: var(--traco);
+  stroke-dasharray: 3 3;
+  stroke-width: 1;
+}
+.mapa .paises .pais-destino {
+  fill: rgba(208, 132, 63, 0.08);
+  stroke: var(--traco-2);
+}
+.mapa .arco {
+  fill: none;
+  stroke-linecap: round;
+  opacity: 0.85;
+}
+.mapa .arco-tracejado {
+  stroke-dasharray: 4 4;
+}
+.mapa .marca-ormuz path {
+  stroke: var(--vermelho);
+  stroke-width: 2;
+}
+.mapa .marca-ormuz text {
+  fill: var(--vermelho);
+  font-size: 11px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 3px;
+}
+.mapa .destinos circle {
+  fill: rgba(208, 132, 63, 0.2);
+  stroke: var(--conhaque);
+  stroke-width: 1;
+}
+.mapa .rotulo-ormuz {
+  fill: var(--vermelho);
+}
+.mapa .rotulo-mar {
+  fill: var(--traco-3);
+  font-size: 11px;
+  letter-spacing: 0.3em;
+  text-transform: uppercase;
+  font-style: italic;
+}
+.mapa .estreito circle {
+  fill: none;
+  stroke: var(--vermelho);
+  stroke-width: 1.5;
+  stroke-dasharray: 3 3;
+}
+.mapa .estreito text {
+  fill: var(--vermelho);
+  font-size: 13px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  paint-order: stroke;
+  stroke: var(--halo);
+  stroke-width: 3px;
+}
+.mapa .estreito .estreito-sub {
+  font-size: 10.5px;
+  fill: var(--traco-2);
+  text-transform: none;
+  letter-spacing: 0.04em;
+}
+
+/* gráficos */
+.grafico {
+  display: block;
+  margin: 10px 0 2px;
+  overflow: visible;
+}
+.grafico .grade {
+  stroke: var(--traco-4);
+  stroke-dasharray: 2 3;
+}
+.grafico .eixo {
+  fill: var(--traco-3);
+  font-size: 9.5px;
+  font-family: var(--mono);
+}
+.grafico .marco {
+  stroke-dasharray: 3 2;
+  stroke-width: 1;
+}
+.grafico .marco-texto {
+  font-size: 9.5px;
+}
+.grafico .linha-serie {
+  fill: none;
+  stroke-width: 1.6;
+}
+.barras-h {
+  margin: 8px 0;
+}
+.barra-h {
+  display: grid;
+  grid-template-columns: 150px 1fr 92px;
+  align-items: center;
+  gap: 8px;
+  font-size: 11px;
+  color: var(--traco-2);
+  padding: 2px 0;
+}
+.barra-h i {
+  height: 6px;
+  display: block;
+}
+.barra-h b {
+  text-align: right;
+  color: var(--traco);
+  font-weight: 500;
+}
+
+/* abas dos casos e linha do tempo */
+.abas {
+  display: flex;
+  gap: 12px;
+  margin: 2px 0 12px;
+  flex-wrap: wrap;
+}
+.abas button {
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  padding: 3px 0;
+  border-bottom: 1px solid transparent;
+}
+.abas button.ativo {
+  color: var(--traco);
+  border-bottom-color: var(--conhaque);
+}
+.eventos .evento {
+  display: grid;
+  grid-template-columns: 80px 1fr;
+  gap: 8px;
+  font-size: 11px;
+  padding: 3px 0;
+  border-bottom: 1px dashed var(--traco-4);
+}
+.evento .data {
+  color: var(--conhaque);
+}
+.evento .titulo {
+  color: var(--traco-2);
+}
+
+/* foco visível no teclado */
+button:focus-visible {
+  outline: 1px solid var(--conhaque);
+  outline-offset: 2px;
+}
+
+/* menos movimento quando o sistema pede */
+@media (prefers-reduced-motion: reduce) {
+  .rotulo {
+    transition: none;
+  }
+}
+
+/* tela estreita (celular): cabeçalho curto, painel lateral vira folha embaixo, controles quebram linha */
+@media (max-width: 900px) {
+  .cabecalho {
+    top: 12px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+  }
+  .cabecalho h1 {
+    font-size: 22px;
+    margin: 4px 0 6px;
+  }
+  .numero-grande {
+    font-size: 30px;
+  }
+  .leitura,
+  .aneis,
+  .rotulo-topo em,
+  .botao-fontes {
+    display: none;
+  }
+  .ficha {
+    top: auto;
+    bottom: 96px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: 38%;
+    border-left: 0;
+    border-top: 1px solid var(--traco-4);
+    padding: 8px 4px 12px;
+  }
+  .controles {
+    left: 16px;
+    right: 16px;
+    transform: none;
+    bottom: 8px;
+  }
+  .vistas,
+  .lentes {
+    flex-wrap: wrap;
+    justify-content: center;
+    gap: 6px 14px;
+  }
+  .barra-h {
+    grid-template-columns: 110px 1fr 80px;
+  }
+}

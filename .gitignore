@@ -1,0 +1,24 @@
+# dependências
+node_modules/
+
+# saídas geradas: build do Vite, pasta publicada no site e capturas de tela
+dist/
+site/
+capturas/
+
+# variáveis de ambiente e segredos (chaves e senhas ficam fora do repositório)
+.env
+.env.*
+!.env.example
+
+# registros e arquivos do sistema
+*.log
+npm-debug.log*
+.DS_Store
+Thumbs.db
+desktop.ini
+
+# editores
+.vscode/*
+!.vscode/extensions.json
+.idea/

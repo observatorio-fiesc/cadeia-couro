@@ -1,0 +1,11 @@
+# texto com fim de linha LF em qualquer sistema
+* text=auto eol=lf
+
+# binários
+*.png binary
+*.jpg binary
+*.jpeg binary
+*.gif binary
+*.ico binary
+*.woff binary
+*.woff2 binary

@@ -1,0 +1,37 @@
+{
+  "name": "cadeia-couro-viposa",
+  "private": true,
+  "version": "0.3.0",
+  "description": "Painel da cadeia produtiva do couro da Viposa: modelo 3D do boi e da vaca, cadeia de insumos, logística e mercados",
+  "type": "module",
+  "engines": {
+    "node": ">=20"
+  },
+  "scripts": {
+    "dev": "vite",
+    "build": "tsc --noEmit && vite build",
+    "preview": "vite preview",
+    "typecheck": "tsc --noEmit",
+    "site": "npm run build && node scripts/montar-site.mjs site",
+    "capturas": "node scripts/capturar.mjs capturas",
+    "teste": "node scripts/testar-interacao.mjs capturas"
+  },
+  "dependencies": {
+    "@react-three/drei": "^10.7.9",
+    "@react-three/fiber": "^9.8.2",
+    "d3-geo": "^3.1.2",
+    "react": "^19.1.0",
+    "react-dom": "^19.1.0",
+    "three": "^0.187.0"
+  },
+  "devDependencies": {
+    "@types/d3-geo": "^3.1.1",
+    "@types/react": "^19.1.0",
+    "@types/react-dom": "^19.1.0",
+    "@types/three": "^0.187.0",
+    "@vitejs/plugin-react": "^5.0.0",
+    "playwright-core": "^1.65.1",
+    "typescript": "~5.9.0",
+    "vite": "^7.1.0"
+  }
+}
