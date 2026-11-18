@@ -3,9 +3,9 @@
 // Por fora, uma linha dupla: o vão entre o corpo e a linha de fora é a pele que vai ao curtume.
 // Clicar numa região destaca só aquela peça de pele, com a mistura da química da ribeira (MT).
 // Clicar no vão abre as camadas da pele (MS); cada camada abre o que ela pode virar.
-import { useEffect, useMemo, useRef, useState, type MutableRefObject, type ReactNode } from 'react'
+import { useEffect, useMemo, useRef, useState, type ComponentRef, type MutableRefObject, type ReactNode } from 'react'
 import { Canvas, useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
-import { OrbitControls } from '@react-three/drei'
+import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { LineSegments2 } from 'three/examples/jsm/lines/LineSegments2.js'
 import { LineSegmentsGeometry } from 'three/examples/jsm/lines/LineSegmentsGeometry.js'
@@ -18,6 +18,7 @@ import { amostra } from '../modelo3d/amostras'
 import { definirMistura, matCamada, matContorno, matGrade, matMistura, matPreparo } from '../modelo3d/materiais'
 import { CAMADAS, COR_DEP, CROMO_SOBRAS, INSUMOS_ANIMAL, NOME_DEP, ORGAOS, PALETA, QUIMICOS_MS, QUIMICOS_MT, REGIOES, regiaoPorId, type Dep, type Modo } from '../modelo3d/receitas'
 import { Decomposicao } from '../modelo3d/Decomposicao'
+import { Menu, NaFaixa, NaLegenda } from '../componentes/Faixa'
 import '../modelo3d/modelo3d.css'
 
 const BRANCO = '#f6f1e7'
@@ -27,7 +28,21 @@ const MENOS_MOVIMENTO = typeof window !== 'undefined' && window.matchMedia?.('(p
 const CASA: Record<Sexo, THREE.Vector3> = { boi: new THREE.Vector3(-1.08, FLUTUA, -0.62), vaca: new THREE.Vector3(1.02, FLUTUA, 0.6) }
 const v3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z)
 const clamp01 = (x: number) => (x < 0 ? 0 : x > 1 ? 1 : x)
-const suave = (t: number) => t * t * (3 - 2 * t)
+// aceleração e frenagem suaves, como as transformações do painel da Marinha
+const flui = (t: number) => (t < 0.5 ? 4 * t * t * t : 1 - (-2 * t + 2) ** 3 / 2)
+
+// ritmo das transições, na gramática do visualizador do submarino (painel-comandante)
+const DUR_SAIDA = MENOS_MOVIMENTO ? 0.2 : 1.3 // segundos para a peça ou as camadas saírem do corpo
+const DUR_VOLTA = MENOS_MOVIMENTO ? 0.2 : 0.9 // e para voltarem
+const TAXA_FADE = 5 // o que entra ou sai de foco
+const TAXA_TEXTURA = 4 // a textura entra depois que a peça chega
+const TAXA_TEXTURA_SAI = 9 // e sai antes de a peça voltar
+const SUAVE_CAMERA = MENOS_MOVIMENTO ? 0.1 : 0.6 // smoothTime do camera-controls
+// o que não está escolhido recua para perto deste traço (o visualizador usa 0,11 contra 0,95)
+const RECUO_ANIMAL = 0.18
+const RECUO_CORPO = 0.32
+const RECUO_INTERIOR = 0.45
+const RECUO_ITEM = 0.25
 
 // a peça escolhida sai um pouco do corpo, sem girar: continua reconhecível no lugar dela
 const DESLOC: Record<RegiaoId, THREE.Vector3> = {
@@ -67,11 +82,7 @@ function cameraDe(modo: Modo, s: Sexo, quadro: Quadro | null, orgaoCentro: THREE
     const d = orgaoCentro ? 1.8 : 3.15
     return { pos: alvo.clone().add(v3(0.55, 0.42, 1).normalize().multiplyScalar(d)), alvo }
   }
-  if (modo === 'regiao' && quadro) {
-    const alvo = quadro.centro.clone().add(v3((quadro.direita + 0.5) / 2, 0, 0))
-    const d = 2.3 + 1.7 * quadro.raio
-    return { pos: alvo.clone().add(v3(0.12, 0.32, 1).normalize().multiplyScalar(d)), alvo }
-  }
+  if (modo === 'regiao' && quadro) return enquadrarPeca(quadro, window.innerWidth, window.innerHeight)
   if (modo === 'pele') {
     const alvo = lugarPilha(s).add(v3(0.45, -0.02, 0))
     return { pos: alvo.clone().add(v3(0.3, 0.95, 3.25)), alvo }
@@ -79,6 +90,39 @@ function cameraDe(modo: Modo, s: Sexo, quadro: Quadro | null, orgaoCentro: THREE
   return { pos: CAM_GERAL.pos.clone(), alvo: CAM_GERAL.alvo.clone() }
 }
 const CAM_GERAL = { pos: v3(1.15, 2.75, 6.6), alvo: v3(0.0, 1.1, 0) }
+const FOV = 36
+// o quadro de decomposição ocupa a esquerda (Deslocamento leva o centro da cena para a direita)
+const DESLOC_PX = 175
+const largo = (w: number) => w >= 900
+
+/**
+ * A peça e o gráfico ao lado cabem na área livre da tela, como o enquadramento do visualizador do
+ * submarino: à esquerda fica o quadro de decomposição, à direita os nomes do gráfico, em cima o título,
+ * embaixo a faixa de controles. A direção da câmera é sempre a mesma, de frente e um pouco de cima.
+ */
+function enquadrarPeca(q: Quadro, W: number, H: number) {
+  const dir = v3(0.12, 0.32, 1).normalize()
+  const tg = Math.tan(THREE.MathUtils.degToRad(FOV) / 2)
+  const L = largo(W)
+  const esq = L ? 370 : 20
+  const dirPx = L ? 330 : 20 // os nomes do gráfico, à direita das barras
+  const topo = 90
+  const base = 90
+  // da borda esquerda da peça à barra do gráfico (baseGraf: direita + 0,45; barra de 0,13)
+  const x0 = q.centro.x - q.raio
+  const x1 = q.centro.x + q.direita + 0.45 + 0.1
+  const meiaAltura = Math.max(q.raio, GRAF_ALTURA / 2 + 0.08)
+  // unidades de mundo por pixel, a uma distância d: 2·d·tg / H
+  const dLargura = ((x1 - x0) * 1.08 * H) / ((W - esq - dirPx) * 2 * tg)
+  const dAltura = (2 * meiaAltura * 1.12 * H) / ((H - topo - base) * 2 * tg)
+  const d = Math.max(dLargura, dAltura, 1.6)
+  const porPx = (2 * d * tg) / H
+  // o alvo cai em W/2 + DESLOC_PX na tela; o meio da área livre fica em (esq + W − dirPx) / 2
+  const ondeCai = W / 2 + (L ? DESLOC_PX : 0)
+  const meioLivre = (esq + W - dirPx) / 2
+  const alvo = v3((x0 + x1) / 2 + (ondeCai - meioLivre) * porPx, q.centro.y, q.centro.z)
+  return { pos: alvo.clone().addScaledVector(dir, d), alvo }
+}
 
 // ---------------------------------------------------------------- estado animado (fora do React)
 type PorSexo<T> = Record<Sexo, T>
@@ -89,13 +133,15 @@ type Anim = {
   corpoA: PorSexo<number>
   int: PorSexo<number> // força do interior
   intA: PorSexo<number>
-  peca: number // a peça sai do corpo
+  peca: number // a peça escolhida sai do corpo (escrito pela peça ativa)
+  texPeca: number // e só depois ganha a textura
   pecaA: number
   pele: number // as camadas saem da pele
+  texPele: number
   peleA: number
-  graf: number // gráfico ao lado
+  graf: number // gráfico ao lado: entra quando a textura já está lá
   grafA: number
-  voo: { pos: THREE.Vector3; alvo: THREE.Vector3 } | null
+  grafDe: 'peca' | 'pele'
   t: number
 }
 const novaAnim = (): Anim => ({
@@ -106,12 +152,14 @@ const novaAnim = (): Anim => ({
   int: { boi: 0.28, vaca: 0.28 },
   intA: { boi: 0.28, vaca: 0.28 },
   peca: 0,
+  texPeca: 0,
   pecaA: 0,
   pele: 0,
+  texPele: 0,
   peleA: 0,
   graf: 0,
   grafA: 0,
-  voo: null,
+  grafDe: 'peca',
   t: 0,
 })
 const linear = (x: number, alvo: number, passo: number) => (Math.abs(alvo - x) <= passo ? alvo : x + Math.sign(alvo - x) * passo)
@@ -257,26 +305,54 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
   }, [orgao, sexo, interiores])
   const quadro = useMemo(() => (regiao ? quadroPeca(modelos[sexo], sexo, regiao) : null), [modelos, sexo, regiao])
 
-  // alvos da animação a cada mudança de estado
+  // alvos da animação a cada mudança de estado: o escolhido fica pleno, o resto recua (como no visualizador do submarino)
   useEffect(() => {
     const a = anim.current
+    const foco = modo !== 'animal' || focoAnimal
     for (const s of SEXOS) {
       const sel = s === sexo
-      a.visA[s] = modo === 'animal' || sel ? 1 : 0.22
-      a.corpoA[s] = modo === 'regiao' || modo === 'pele' ? (sel ? 0.5 : 0.3) : 1
+      a.visA[s] = !foco || sel ? 1 : RECUO_ANIMAL
+      // com uma peça, as camadas ou o interior à frente, o corpo vira contexto
+      a.corpoA[s] = modo === 'regiao' || modo === 'pele' ? RECUO_CORPO : modo === 'interior' && sel ? RECUO_INTERIOR : 1
       a.intA[s] = modo === 'interior' ? (sel ? 1 : 0.12) : modo === 'animal' ? 0.28 : 0.1
     }
     a.pecaA = modo === 'regiao' ? 1 : 0
     a.peleA = modo === 'pele' ? 1 : 0
     a.grafA = modo === 'regiao' || (modo === 'pele' && !camada) ? 1 : 0
-    let c = cameraDe(modo, sexo, quadro, orgaoCentro)
+    a.grafDe = modo === 'pele' ? 'pele' : 'peca'
+  }, [modo, sexo, camada, focoAnimal])
+  // outro gráfico (outra região, outra camada): some e volta a entrar depois da textura
+  useEffect(() => {
+    anim.current.graf = 0
+  }, [regiao, sexo, camada, modo])
+  // outra peça: o progresso é o dela, a partir do corpo (ela mesma escreve a cada quadro)
+  useEffect(() => {
+    anim.current.peca = 0
+    anim.current.texPeca = 0
+  }, [regiao, sexo])
+
+  // enquadramento da câmera: muda só quando muda o que está em foco
+  const enquadramento = useMemo(() => {
+    const dep = ini.cam.length === 6 && modo === ini.modo ? ini.cam : null
+    if (dep) return { pos: v3(dep[0], dep[1], dep[2]), alvo: v3(dep[3], dep[4], dep[5]) }
     if (modo === 'animal' && focoAnimal) {
       const alvo = CASA[sexo].clone().add(v3(0.05, 0.95, 0))
-      c = { pos: alvo.clone().add(v3(0.7, 0.55, 3.2)), alvo }
+      return { pos: alvo.clone().add(v3(0.7, 0.55, 3.2)), alvo }
     }
-    const dep = ini.cam.length === 6 && modo === ini.modo ? ini.cam : null
-    a.voo = dep ? { pos: v3(dep[0], dep[1], dep[2]), alvo: v3(dep[3], dep[4], dep[5]) } : c
-  }, [modo, sexo, quadro, camada, orgaoCentro, ini, focoAnimal])
+    return cameraDe(modo, sexo, quadro, orgaoCentro)
+  }, [modo, sexo, quadro, orgaoCentro, ini, focoAnimal])
+
+  // peças de pele na cena: a escolhida e as que ainda voltam ao corpo
+  const chavePeca = regiao ? `${sexo}-${regiao}` : null
+  const [pecas, setPecas] = useState<{ chave: string; sexo: Sexo; regiao: RegiaoId }[]>([])
+  useEffect(() => {
+    if (!regiao || !chavePeca) return
+    setPecas((l) => (l.some((x) => x.chave === chavePeca) ? l : [...l, { chave: chavePeca, sexo, regiao }]))
+  }, [chavePeca, sexo, regiao])
+  const chaveAtual = useRef(chavePeca)
+  chaveAtual.current = chavePeca
+  // a peça que já voltou ao corpo sai da cena, a menos que tenha sido escolhida de novo no caminho
+  const pecaVoltou = (chave: string) => setPecas((l) => (chave === chaveAtual.current ? l : l.filter((x) => x.chave !== chave)))
 
   // ---------------------------------------------------------------- navegação
   function irRaiz() {
@@ -478,7 +554,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
       dy: -70,
       pontos: () => {
         const g = pecaGrupo.current
-        if (!g || anim.current.peca < 0.85) return []
+        if (!g || anim.current.texPeca < 0.5) return []
         return [g.localToWorld(v3(0, 0.08, 0))]
       },
       classe: 'pilula selecionada',
@@ -545,7 +621,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
         modo: 'esq',
         pontos: () => {
           const g = pilhaGrupos.current[i]
-          if (!g || anim.current.pele < 0.8) return []
+          if (!g || anim.current.texPele < 0.4) return []
           const ps: THREE.Vector3[] = []
           for (let k = 0; k < 8; k++) {
             const a = (k / 8) * Math.PI * 2
@@ -570,7 +646,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
         modo: 'painel',
         pontos: () => {
           const g = pilhaGrupos.current[i]
-          if (!g || anim.current.pele < 0.8) return []
+          if (!g || anim.current.texPele < 0.4) return []
           const ps: THREE.Vector3[] = []
           for (let k = 0; k < 8; k++) {
             const a = (k / 8) * Math.PI * 2
@@ -615,7 +691,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
     <div className="bois">
       <Canvas
         className="cena"
-        camera={{ position: [1.15, 2.75, 6.6], fov: 36, near: 0.05, far: 120 }}
+        camera={{ position: [1.15, 2.75, 6.6], fov: FOV, near: 0.05, far: 120 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, stencil: true }}
         resize={{ scroll: false, debounce: 0 }}
@@ -653,12 +729,30 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
             />
           </group>
         ))}
-        {regiao && quadro && <PecaCena key={`${sexo}-${regiao}`} m={modelos[sexo]} sexo={sexo} regiao={regiao} anim={anim} itens={itensPeca} foco={hover?.tipo === 'quimico' ? hover.id : null} grupo={pecaGrupo} fim={quadro.centro} />}
+        {pecas.map((pc) => {
+          const ativa = pc.chave === chavePeca
+          return (
+            <PecaCena
+              key={pc.chave}
+              m={modelos[pc.sexo]}
+              sexo={pc.sexo}
+              regiao={pc.regiao}
+              anim={anim}
+              ativa={ativa}
+              itens={ativa ? itensPeca : null}
+              foco={ativa && hover?.tipo === 'quimico' ? hover.id : null}
+              grupo={pecaGrupo}
+              onVoltou={() => pecaVoltou(pc.chave)}
+            />
+          )
+        })}
         <Grafico3D key={`g-${modo}-${itensGraf.map((q) => q.id + q.cor).join('')}`} itens={itensGraf} ladrilhos={ladrilhos} base={baseGraf} anim={anim} foco={hover?.tipo === 'quimico' ? hover.id : null} onHover={(id) => setHover(id ? { tipo: 'quimico', id } : null)} />
         <CamadasCena sexo={sexo} anim={anim} grupos={pilhaGrupos} sel={camada} hover={hover?.tipo === 'camada' ? hover.id : null} onHover={(id) => setHover(id ? { tipo: 'camada', id } : null)} onClique={irCamada} />
         <Deslocamento />
         <Projetor alvos={alvos} elementos={elementos} caminhos={caminhos} />
-        <Controles anim={anim} girar={modo === 'animal' && !hover && !MENOS_MOVIMENTO} />
+        <Diretor enquadramento={enquadramento} />
+        <PlanoDaFrente />
+        <AlcaDev />
       </Canvas>
       <div className="bois-rotulos" aria-hidden={rotulos.length === 0}>
         <svg className="bois-ligacoes">
@@ -709,81 +803,111 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
           else setHover({ tipo: 'orgao', id })
         }}
       />
-      <div className="lente-modelo">
-        <div className="botoes">
-          <button className={lente === 'insumos' ? 'ativo' : ''} onClick={() => setLente('insumos')}>
-            Insumos
-          </button>
-          <button className={lente === 'dependencia' ? 'ativo' : ''} onClick={() => setLente('dependencia')}>
-            Dependência externa
-          </button>
-        </div>
-        {lente === 'dependencia' && (
-          <div className="chave">
-            {(['sim', 'nao', 'sd'] as Dep[]).map((d) => (
-              <span key={d}>
-                <i style={{ background: COR_DEP[d] }} />
-                {NOME_DEP[d]}
-              </span>
-            ))}
+      <NaFaixa>
+        <Menu<Lente>
+          rotulo="Lente"
+          valor={lente}
+          opcoes={[
+            { chave: 'insumos', rotulo: 'Insumos' },
+            { chave: 'dependencia', rotulo: 'Dependência externa', cor: COR_DEP.sim },
+          ]}
+          onEscolher={setLente}
+        />
+      </NaFaixa>
+      {lente === 'dependencia' && (
+        <NaLegenda>
+          <div className="legenda-faixa">
+            <div className="legenda-titulo">Dependência externa</div>
+            <ul className="legenda-chaves">
+              {(['sim', 'nao', 'sd'] as Dep[]).map((d) => (
+                <li key={d}>
+                  <i style={{ background: COR_DEP[d] }} />
+                  {NOME_DEP[d]}
+                </li>
+              ))}
+            </ul>
           </div>
-        )}
-      </div>
+        </NaLegenda>
+      )}
     </div>
   )
 }
 
 // ================================================================ componentes da cena
+/**
+ * O que está em foco (a peça, o gráfico, as camadas: renderOrder 10 em diante) é desenhado por cima do
+ * contexto, como a seleção no visualizador do submarino: a profundidade é limpa antes deles. Assim um animal
+ * recuado, ou um órgão dele, nunca recorta a peça escolhida. Entre si, eles continuam se escondendo.
+ */
+function PlanoDaFrente() {
+  const obj = useMemo(() => {
+    const g = new THREE.BufferGeometry()
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(9), 3))
+    const m = new THREE.MeshBasicMaterial({ colorWrite: false, depthWrite: false, depthTest: false, transparent: true })
+    const mesh = new THREE.Mesh(g, m)
+    mesh.renderOrder = 9.9
+    mesh.frustumCulled = false
+    mesh.onBeforeRender = (r) => r.clearDepth()
+    return mesh
+  }, [])
+  return <primitive object={obj} />
+}
+
+// em desenvolvimento, a cena na janela, para medir e depurar (como no visualizador do submarino)
+function AlcaDev() {
+  const { gl, scene, camera } = useThree()
+  useEffect(() => {
+    if ((import.meta as unknown as { env?: { DEV?: boolean } }).env?.DEV) (window as unknown as { __three: unknown }).__three = { gl, scene, camera }
+  }, [gl, scene, camera])
+  return null
+}
+
+// o relógio de tudo o que não é a peça: presença dos animais, interior, camadas e gráfico
 function Animador({ anim }: { anim: MutableRefObject<Anim> }) {
-  const controles = useThree((s) => s.controls) as unknown as { target: THREE.Vector3 } | null
-  useFrame((st, dt) => {
+  useFrame((_, dt) => {
     const a = anim.current
-    const d = Math.min(dt, 0.12)
+    // uma aba que volta do segundo plano não salta
+    const d = Math.min(dt, 0.05)
     a.t += d
     for (const s of SEXOS) {
-      a.vis[s] = expo(a.vis[s], a.visA[s], d, 3.2)
-      a.corpo[s] = expo(a.corpo[s], a.corpoA[s], d, 3.2)
-      a.int[s] = expo(a.int[s], a.intA[s], d, 3.2)
+      a.vis[s] = expo(a.vis[s], a.visA[s], d, TAXA_FADE)
+      a.corpo[s] = expo(a.corpo[s], a.corpoA[s], d, TAXA_FADE)
+      a.int[s] = expo(a.int[s], a.intA[s], d, TAXA_FADE)
     }
-    a.peca = linear(a.peca, a.pecaA, d * 0.85)
-    a.pele = linear(a.pele, a.peleA, d * 0.8)
-    a.graf = expo(a.graf, a.grafA, d, a.grafA > a.graf ? 1.6 : 4)
-    if (a.voo && controles) {
-      const f = 1 - Math.exp(-d * 2.0)
-      st.camera.position.lerp(a.voo.pos, f)
-      controles.target.lerp(a.voo.alvo, f)
-      if (st.camera.position.distanceTo(a.voo.pos) < 0.01 && controles.target.distanceTo(a.voo.alvo) < 0.01) a.voo = null
+    // camadas: saem da pele, chegam, e só então ganham textura; na volta, a textura sai primeiro
+    if (a.peleA > 0) {
+      a.pele = linear(a.pele, 1, d / DUR_SAIDA)
+      a.texPele = expo(a.texPele, a.pele >= 1 ? 1 : 0, d, TAXA_TEXTURA)
+    } else {
+      a.texPele = expo(a.texPele, 0, d, TAXA_TEXTURA_SAI)
+      if (a.texPele < 0.08) a.pele = linear(a.pele, 0, d / DUR_VOLTA)
     }
+    // o gráfico ao lado entra depois da textura e sai junto com ela
+    const pronto = a.grafDe === 'pele' ? a.texPele : a.texPeca
+    const quer = a.grafA > 0 && pronto > 0.8 ? 1 : 0
+    a.graf = expo(a.graf, quer, d, quer ? 3 : TAXA_TEXTURA_SAI)
   })
   return null
 }
 
-function Controles({ anim, girar }: { anim: MutableRefObject<Anim>; girar: boolean }) {
-  const ref = useRef<unknown>(null)
+/**
+ * A câmera, como no visualizador do submarino: camera-controls amortece alvo, distância e ângulos juntos
+ * (smoothTime), girando em volta do alvo e nunca pelo caminho longo. Sem giro automático. O arraste
+ * do usuário interrompe o voo; um novo enquadramento só vem de uma nova escolha.
+ */
+function Diretor({ enquadramento }: { enquadramento: { pos: THREE.Vector3; alvo: THREE.Vector3 } }) {
+  const ref = useRef<ComponentRef<typeof CameraControls>>(null)
+  const primeiro = useRef(true)
   useEffect(() => {
-    const c = ref.current as THREE.EventDispatcher<{ start: object }> | null
+    const c = ref.current
     if (!c) return
-    const parar = () => {
-      anim.current.voo = null
-    }
-    c.addEventListener('start', parar)
-    return () => c.removeEventListener('start', parar)
-  }, [anim])
-  return (
-    <OrbitControls
-      ref={ref as never}
-      makeDefault
-      target={[0, 1.1, 0]}
-      enableDamping
-      dampingFactor={0.08}
-      enablePan
-      screenSpacePanning
-      minDistance={0.9}
-      maxDistance={24}
-      autoRotate={girar}
-      autoRotateSpeed={0.45}
-    />
-  )
+    const { pos, alvo } = enquadramento
+    c.setLookAt(pos.x, pos.y, pos.z, alvo.x, alvo.y, alvo.z, !primeiro.current)
+    // o ângulo acumulado por voltas do usuário não vira giro: o voo vai pelo lado mais curto
+    c.normalizeRotations()
+    primeiro.current = false
+  }, [enquadramento])
+  return <CameraControls ref={ref} makeDefault smoothTime={SUAVE_CAMERA} minDistance={0.9} maxDistance={24} maxPolarAngle={1.45} dollyToCursor />
 }
 
 // grade em toda a tela e, sob cada animal, uma sombra quadriculada menor que ele
@@ -1009,26 +1133,38 @@ function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObject<Anim
     const pasto = INSUMOS_ANIMAL.find((x) => x.id === 'pasto')!
     obj.capim.mat.color.set(p.lente === 'dependencia' ? COR_DEP[pasto.dep] : pasto.cor)
   }, [obj, p.lente])
-  useFrame(() => {
+  // níveis de cada órgão e de cada insumo, amortecidos: o escolhido acende, os outros recuam devagar
+  const nivel = useMemo(() => new Map<string, number>(), [])
+  const amortece = (id: string, alvo: number, d: number) => {
+    const v = expo(nivel.get(id) ?? alvo, alvo, d, TAXA_FADE * 1.6)
+    nivel.set(id, v)
+    return v
+  }
+  useFrame((_, dt) => {
+    const d = Math.min(dt, 0.05)
     const a = anim.current
     const f = a.int[sexo] * a.vis[sexo]
     const hv = p.hover
     for (const o of obj.orgaos) {
       const sel = p.orgao === o.id || (hv?.tipo === 'orgao' && hv.id === o.id)
       const outro = (p.orgao || hv?.tipo === 'orgao') && !sel
-      o.mat.uniforms.opac.value = f * (sel ? 1 : outro ? 0.35 : 0.75)
-      o.mat.uniforms.preench.value = sel ? 0.1 : 0.025
-      o.mat.uniforms.largura.value = sel ? 3 : 2.3
-      o.mesh.visible = o.prep.visible = f > 0.01
+      const n = amortece(o.id, sel ? 1 : outro ? RECUO_ITEM : 0.75, d)
+      o.mat.uniforms.opac.value = f * n
+      o.mat.uniforms.preench.value = 0.025 + 0.075 * clamp01((n - 0.75) / 0.25)
+      o.mat.uniforms.largura.value = 2.3 + 0.7 * clamp01((n - 0.75) / 0.25)
+      o.mesh.visible = f > 0.01
+      // o passe de profundidade esconde as dobras do próprio órgão; num animal recuado, ou com o interior
+      // só sugerido, ele não pode tapar o que está à frente (a peça, o gráfico)
+      o.prep.visible = f > 0.2 && a.vis[sexo] > 0.6
     }
     const insHover = hv?.tipo === 'insumo' ? hv.id : null
     for (const n of obj.nuvens) {
       const ins = INSUMOS_ANIMAL.find((x) => x.id === n.id)!
       const base = ins.grupo === 'adubo' ? (p.lente === 'dependencia' ? 0.9 : 0.45) : 0.85
-      n.mat.opacity = f * (insHover ? (insHover === n.id ? 1 : 0.2) : base)
+      n.mat.opacity = f * amortece(`i-${n.id}`, insHover ? (insHover === n.id ? 1 : 0.2) : base, d)
       n.inst.visible = f > 0.01
     }
-    obj.capim.mat.opacity = f * (insHover ? (insHover === 'pasto' ? 1 : 0.2) : 0.8)
+    obj.capim.mat.opacity = f * amortece('i-pasto', insHover ? (insHover === 'pasto' ? 1 : 0.2) : 0.8, d)
     obj.capim.obj.visible = f > 0.01
   })
   return (
@@ -1075,15 +1211,29 @@ function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObject<Anim
   )
 }
 
-// a peça de pele escolhida sai um pouco do corpo e mostra a mistura da química
-function PecaCena(p: { m: Modelo; sexo: Sexo; regiao: RegiaoId; anim: MutableRefObject<Anim>; itens: Item[]; foco: string | null; grupo: MutableRefObject<THREE.Group | null>; fim: THREE.Vector3 }) {
+// a peça de pele escolhida sai um pouco do corpo, em traço; ao chegar, mostra a mistura da química.
+// Cada peça tem o próprio relógio: trocar de região manda a anterior de volta ao corpo enquanto a nova sai.
+type PropsPeca = {
+  m: Modelo
+  sexo: Sexo
+  regiao: RegiaoId
+  anim: MutableRefObject<Anim>
+  ativa: boolean
+  itens: Item[] | null
+  foco: string | null
+  grupo: MutableRefObject<THREE.Group | null>
+  onVoltou: () => void
+}
+function PecaCena(p: PropsPeca) {
   const { m, sexo, regiao, anim } = p
   const pc = m.pecas[regiao]
   const r = regiaoPorId(regiao)
   const obj = useMemo(() => {
     const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.BufferAttribute(pc.pos, 3))
-    g.setAttribute('normal', new THREE.BufferAttribute(pc.nrm, 3))
+    // cópias: translate() mexe no array, e o array é do modelo, compartilhado.
+    // Sem a cópia, cada nova montagem da mesma peça (voltar a Barrigas, trocar Boi e Vaca) a deslocava de novo.
+    g.setAttribute('position', new THREE.BufferAttribute(new Float32Array(pc.pos), 3))
+    g.setAttribute('normal', new THREE.BufferAttribute(new Float32Array(pc.nrm), 3))
     g.setAttribute('uvm', new THREE.BufferAttribute(pc.uvm, 2))
     g.setAttribute('lado', new THREE.BufferAttribute(pc.lado, 1))
     g.translate(-pc.centro.x, -pc.centro.y, -pc.centro.z)
@@ -1110,7 +1260,9 @@ function PecaCena(p: { m: Modelo; sexo: Sexo; regiao: RegiaoId; anim: MutableRef
     obj.mat.dispose()
     obj.borda.obj.geometry.dispose()
   }, [obj])
+  // a peça que volta ao corpo guarda a mistura que tinha
   useEffect(() => {
+    if (!p.itens) return
     definirMistura(
       obj.mat,
       p.itens.map((q) => q.cor),
@@ -1118,28 +1270,53 @@ function PecaCena(p: { m: Modelo; sexo: Sexo; regiao: RegiaoId; anim: MutableRef
     )
   }, [obj, p.itens])
   useEffect(() => {
+    if (!p.itens) return
     const i = p.foco ? p.itens.findIndex((q) => q.id === p.foco) : -1
     obj.mat.uniforms.foco.value = i
   }, [obj, p.foco, p.itens])
   const ini = useMemo(() => pc.centro.clone().add(CASA[sexo]), [pc, sexo])
-  const fim = p.fim
-  useFrame(() => {
-    const g = p.grupo.current
+  const fim = useMemo(() => quadroPeca(m, sexo, regiao).centro, [m, sexo, regiao])
+  const grupo = useRef<THREE.Group>(null)
+  const rel = useRef({ k: 0, tex: 0, voltou: false })
+  useFrame((_, dt) => {
+    const g = grupo.current
     if (!g) return
-    const k = suave(anim.current.peca)
-    g.visible = anim.current.peca > 0.001
-    g.position.lerpVectors(ini, fim, k)
-    g.scale.setScalar(1 + (obj.escala - 1) * k)
-    obj.mat.uniforms.opac.value = clamp01(anim.current.peca * 3)
-    obj.borda.mat.opacity = obj.borda.base * clamp01(anim.current.peca * 3)
+    const d = Math.min(dt, 0.05)
+    const a = anim.current
+    const r = rel.current
+    if (p.ativa && a.pecaA > 0) {
+      // sai do corpo; a textura só entra quando a peça para no lugar
+      r.voltou = false
+      r.k = linear(r.k, 1, d / DUR_SAIDA)
+      r.tex = expo(r.tex, r.k >= 1 ? 1 : 0, d, TAXA_TEXTURA)
+    } else {
+      // volta: primeiro a textura sai, depois a peça desce ao corpo
+      r.tex = expo(r.tex, 0, d, TAXA_TEXTURA_SAI)
+      if (r.tex < 0.08) r.k = linear(r.k, 0, d / DUR_VOLTA)
+      if (!p.ativa && r.k === 0 && !r.voltou) {
+        r.voltou = true
+        p.onVoltou()
+      }
+    }
+    if (p.ativa) {
+      a.peca = r.k
+      a.texPeca = r.tex
+      p.grupo.current = g
+    }
+    const e = flui(r.k)
+    g.visible = r.k > 0.001
+    g.position.lerpVectors(ini, fim, e)
+    // um leve arco para cima no meio do trajeto: a peça descola antes de vir para a frente
+    g.position.y += Math.sin(Math.PI * e) * 0.06
+    g.scale.setScalar(1 + (obj.escala - 1) * e)
+    // o contorno acende no corpo antes de a peça sair
+    const traco = clamp01(r.k * 5)
+    obj.mat.uniforms.opac.value = traco
+    obj.mat.uniforms.textura.value = r.tex
+    obj.borda.mat.opacity = obj.borda.base * traco
   })
   return (
-    <group
-      ref={(el) => {
-        p.grupo.current = el
-      }}
-      visible={false}
-    >
+    <group ref={grupo} visible={false}>
       <primitive object={obj.mesh} />
       <primitive object={obj.borda.obj} />
     </group>
@@ -1180,16 +1357,20 @@ function Grafico3D(p: { itens: Item[]; ladrilhos: Ladrilho[]; base: THREE.Vector
     [p.itens, p.ladrilhos],
   )
   useEffect(() => () => ladr.forEach((l) => l.geo.dispose()), [ladr])
-  useFrame(() => {
+  // foco de cada ladrilho, amortecido
+  const foco = useMemo(() => ladr.map(() => 1), [ladr])
+  useFrame((_, dt) => {
     const g = grupo.current
     if (!g) return
+    const d = Math.min(dt, 0.05)
     const v = p.anim.current.graf
     g.visible = v > 0.01
     g.position.copy(p.base)
-    ladr.forEach((l) => {
-      const apagado = p.foco && p.foco !== l.id
-      l.mat.opacity = v * (apagado ? 0.18 : 0.95)
-      ;(l.arestas.material as THREE.LineBasicMaterial).opacity = v * (p.foco === l.id ? 1 : 0.45)
+    ladr.forEach((l, i) => {
+      const apagado = !!p.foco && p.foco !== l.id
+      foco[i] = expo(foco[i], apagado ? 0.19 : 1, d, TAXA_FADE * 1.6)
+      l.mat.opacity = v * 0.95 * foco[i]
+      ;(l.arestas.material as THREE.LineBasicMaterial).opacity = v * (p.foco === l.id ? 1 : 0.45 * foco[i])
     })
   })
   return (
@@ -1240,22 +1421,43 @@ function CamadasCena(p: { sexo: Sexo; anim: MutableRefObject<Anim>; grupos: Muta
   const fim = useMemo(() => lugarPilha(p.sexo), [p.sexo])
   const ini = useMemo(() => CASA[p.sexo].clone().add(v3(0.05, 1.0, 0.1)), [p.sexo])
   const giro = useMemo(() => new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), Math.PI / 4), [])
-  useFrame(() => {
+  // onde cada camada está: segue o alvo amortecida, então trocar de animal faz a pilha deslizar, sem salto
+  const lugar = useMemo(() => CAMADAS.map(() => ({ pos: new THREE.Vector3(), escala: 0.15, posta: false })), [])
+  const alvo = useMemo(() => new THREE.Vector3(), [])
+  // realce de cada camada, amortecido como a opacidade das peças do visualizador
+  const foco = useMemo(() => CAMADAS.map(() => 1), [])
+  useFrame((_, dt) => {
     const a = p.anim.current
+    const d = Math.min(dt, 0.05)
     obj.forEach((o, i) => {
       const g = p.grupos.current[i]
       if (!g) return
-      const k = suave(clamp01((a.pele - i * 0.08) / 0.7))
+      // as camadas saem uma depois da outra, de cima para baixo
+      const k = flui(clamp01((a.pele - i * 0.08) / 0.7))
       g.visible = a.pele > 0.001
-      g.position.lerpVectors(ini, fim, k)
-      g.position.y += Y_CAMADA[i] * k
+      alvo.lerpVectors(ini, fim, k)
+      alvo.y += Y_CAMADA[i] * k
+      const escala = 0.15 + 0.85 * k
+      const l = lugar[i]
+      if (!l.posta || a.pele < 0.001) {
+        l.pos.copy(alvo)
+        l.escala = escala
+        l.posta = true
+      } else {
+        const f = 1 - Math.exp(-8 * d)
+        l.pos.lerp(alvo, f)
+        l.escala += (escala - l.escala) * f
+      }
+      g.position.copy(l.pos)
       g.quaternion.copy(giro)
-      g.scale.setScalar(0.15 + 0.85 * k)
+      g.scale.setScalar(l.escala)
       const sel = p.sel === o.c.id
       const hov = p.hover === o.c.id
-      const recua = p.sel && !sel
-      const op = clamp01(a.pele * 2.5) * (recua ? 0.35 : 1)
+      const recua = !!p.sel && !sel
+      foco[i] = expo(foco[i], recua ? RECUO_ITEM : 1, d, TAXA_FADE)
+      const op = clamp01(a.pele * 2.5) * foco[i]
       o.mat.uniforms.opac.value = op
+      o.mat.uniforms.textura.value = a.texPele
       o.mat.uniforms.realce.value = sel || hov ? 1 : 0
       o.mat.uniforms.tempo.value = a.t
       o.linhas.mat.opacity = o.linhas.base * op * (sel || hov ? 1.15 : 1)
@@ -1275,7 +1477,7 @@ function CamadasCena(p: { sexo: Sexo; anim: MutableRefObject<Anim>; grupos: Muta
           <primitive
             object={o.mesh}
             onPointerMove={(e: ThreeEvent<PointerEvent>) => {
-              if (p.anim.current.pele < 0.8) return
+              if (p.anim.current.pele < 1) return
               e.stopPropagation()
               p.onHover(o.c.id)
               document.body.style.cursor = 'pointer'
@@ -1285,7 +1487,7 @@ function CamadasCena(p: { sexo: Sexo; anim: MutableRefObject<Anim>; grupos: Muta
               document.body.style.cursor = ''
             }}
             onClick={(e: ThreeEvent<MouseEvent>) => {
-              if (p.anim.current.pele < 0.8 || e.delta > 6) return
+              if (p.anim.current.pele < 1 || e.delta > 6) return
               e.stopPropagation()
               p.onClique(o.c.id)
             }}
@@ -1303,7 +1505,7 @@ function Deslocamento() {
   const camera = useThree((s) => s.camera) as THREE.PerspectiveCamera
   const size = useThree((s) => s.size)
   useEffect(() => {
-    const px = size.width >= 900 ? 175 : 0
+    const px = largo(size.width) ? DESLOC_PX : 0
     if (px) camera.setViewOffset(size.width, size.height, -px, 0, size.width, size.height)
     else camera.clearViewOffset()
     camera.updateProjectionMatrix()

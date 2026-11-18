@@ -165,6 +165,7 @@ export function matMistura() {
       bolinhas: { value: 0 },
       foco: { value: -1 },
       opac: { value: 1 },
+      textura: { value: 1 },
       fundo: { value: v3('#14110d') },
       branco: { value: v3('#f6f1e7') },
       semente: { value: 0 },
@@ -200,6 +201,7 @@ export function matMistura() {
       uniform float bolinhas;
       uniform float foco;
       uniform float opac;
+      uniform float textura;
       uniform vec3 fundo;
       uniform vec3 branco;
       uniform float semente;
@@ -272,7 +274,8 @@ export function matMistura() {
         float f = dot(nn, normalize(vV));
         float lin = 1.0 - smoothstep(0.8, 1.8, abs(f) / max(fwidth(f), 1e-5));
         col = mix(col, branco, lin * 0.9);
-        gl_FragColor = vec4(col, opac);
+        // em trânsito, só o traço e um véu claro; a textura entra quando a peça chega
+        gl_FragColor = vec4(mix(branco, col, textura), opac * mix(max(lin, 0.06), 1.0, textura));
       }`,
     side: THREE.DoubleSide,
     transparent: true,
@@ -305,6 +308,7 @@ export function matCamada(textura: keyof typeof TEXTURAS, cor: string, corLado: 
       branco: { value: v3('#f6f1e7') },
       cromo: { value: v3('#5daed2') },
       opac: { value: 1 },
+      textura: { value: 1 },
       realce: { value: 0 },
       luz: { value: new THREE.Vector3(0.35, 0.85, 0.4).normalize() },
       tempo: { value: 0 },
@@ -340,6 +344,7 @@ export function matCamada(textura: keyof typeof TEXTURAS, cor: string, corLado: 
       uniform vec3 branco;
       uniform vec3 cromo;
       uniform float opac;
+      uniform float textura;
       uniform float realce;
       uniform vec3 luz;
       varying vec3 vL;
@@ -419,7 +424,8 @@ export function matCamada(textura: keyof typeof TEXTURAS, cor: string, corLado: 
         float f = dot(nn, normalize(vV));
         float lin = 1.0 - smoothstep(0.7, 1.7, abs(f) / max(fwidth(f), 1e-5));
         col = mix(col, branco, lin * (0.75 + 0.25 * realce));
-        gl_FragColor = vec4(col, opac);
+        // em trânsito, só o traço e um véu claro; a textura entra quando a camada chega
+        gl_FragColor = vec4(mix(branco, col, textura), opac * mix(max(lin, 0.06), 1.0, textura));
       }`,
     side: THREE.DoubleSide,
     transparent: true,
