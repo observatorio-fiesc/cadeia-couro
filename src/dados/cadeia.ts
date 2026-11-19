@@ -75,7 +75,15 @@ export type Indice = {
   dependentesDe: Map<string, number[]> // id -> índices das arestas que saem do nó
 }
 
-type Extra = { fontes: Record<string, string>; nos: (No & { insumos_indicio?: string[] })[]; arestas: Aresta[] }
+export type Extra = {
+  fontes: Record<string, string>
+  nos: (No & { insumos_indicio?: string[] })[]
+  arestas: Aresta[]
+  /** nós de cadeia.json com outro nome ou descrição (um nó dividido em dois fica com o nome da sua parte) */
+  alterar?: { id: string; nome?: string; descricao?: string }[]
+  /** arestas de cadeia.json que deixam de valer */
+  remover_arestas?: { de: string; para: string; motivo?: string }[]
+}
 
 export async function carregarCadeia(): Promise<Cadeia> {
   const r = await fetch('./data/cadeia.json')
@@ -88,15 +96,25 @@ export async function carregarCadeia(): Promise<Cadeia> {
 }
 
 /**
- * Junta os acréscimos à cadeia e refaz os alcances como o gerador os calcula (conferido contra os
- * valores dele: os 101 nós de oferta batem). O universo são as etapas, insumos e materiais (camadas 1 a 3
- * da oferta) e os artigos; a base do alcance é esse universo menos o próprio elo.
+ * Junta os acréscimos e as correções à cadeia: nós novos, nós renomeados, arestas novas e arestas que deixam
+ * de valer. Os alcances são refeitos depois, quando o mapa do processo já foi aplicado (contexto.ts).
  */
-function juntar(c: Cadeia, e: Extra) {
+export function juntar(c: Cadeia, e: Extra) {
   Object.assign(c.meta.fontes, e.fontes)
   const ids = new Set(c.nos.map((n) => n.id))
   for (const n of e.nos) if (!ids.has(n.id)) c.nos.push(n)
   const porId = new Map(c.nos.map((n) => [n.id, n as No & { insumos_indicio?: string[] }]))
+  for (const m of e.alterar ?? []) {
+    const n = porId.get(m.id)
+    if (!n) continue
+    if (m.nome) n.nome = m.nome
+    if (m.descricao) n.descricao = m.descricao
+  }
+  for (const r of e.remover_arestas ?? []) {
+    c.arestas = c.arestas.filter((a) => !(a.de === r.de && a.para === r.para))
+    const alvo = porId.get(r.para)
+    if (alvo) alvo.insumos = alvo.insumos.filter((x) => x !== r.de)
+  }
   for (const a of e.arestas) {
     if (!porId.has(a.de) || !porId.has(a.para)) continue
     if (c.arestas.some((x) => x.de === a.de && x.para === a.para)) continue
@@ -106,9 +124,13 @@ function juntar(c: Cadeia, e: Extra) {
     const lista = a.confianca === 'indício' ? (alvo.insumos_indicio ??= []) : alvo.insumos
     if (!lista.includes(a.de)) lista.push(a.de)
   }
-  recalcularAlcances(c)
 }
 
+/**
+ * Refaz os alcances como o gerador os calcula (conferido contra os valores dele: os 101 nós de oferta batem).
+ * O universo são as etapas, insumos e materiais (camadas 1 a 3 da oferta) e os artigos; a base do alcance é
+ * esse universo menos o próprio elo.
+ */
 export function recalcularAlcances(c: Cadeia) {
   const porId = new Map(c.nos.map((n) => [n.id, n]))
   const conta = (n: No) => (n.lado === 'oferta' ? n.camada >= 1 && n.camada <= 3 : n.lado === 'demanda' && n.camada === 1)

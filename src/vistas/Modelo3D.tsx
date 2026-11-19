@@ -34,13 +34,15 @@ import {
 import { Decomposicao, type Selecao } from '../modelo3d/Decomposicao'
 import { Menu, NaCabeca, NaFaixa, NaLegenda } from '../componentes/Faixa'
 import { SeletorSistema } from '../componentes/SeletorSistema'
-import { CartaoCadeia } from '../componentes/CartaoCadeia'
 import { RECUO_ANIMAL, RECUO_CORPO, RECUO_INTERIOR, v3 } from '../modelo3d/cena'
 import {
   BOTA,
   CAM_GERAL,
   CASA,
+  DIREITA,
   ESTACOES,
+  naVista,
+  vistaGeral,
   lugarPilha,
   FOV,
   GRAF_ALTURA,
@@ -73,7 +75,7 @@ const cantos = (a: THREE.Vector3, b: THREE.Vector3) => [0, 1, 2, 3, 4, 5, 6, 7].
 /** O cartão de cadeia aberto: o item escolhido e os nós da cadeia que ele representa. */
 type Cartao = { titulo: string; nota?: string; ids: string[] }
 
-export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
+export function VistaModelo3D({ ctx, onVerNoCone }: { ctx: Contexto; onVerNoCone?: (id: string) => void }) {
   const modelos = useMemo(() => ({ boi: gerarModelo('boi'), vaca: gerarModelo('vaca') }), [])
   const interiores = useMemo(() => ({ boi: gerarInterior('boi', modelos.boi.escala), vaca: gerarInterior('vaca', modelos.vaca.escala) }), [modelos])
   // estado inicial pela URL (?modo=regiao&regiao=barrigas&sexo=vaca&camada=raspa&lente=dependencia): serve às capturas no servidor local
@@ -207,15 +209,15 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
     const { w, h } = tela
     switch (modo) {
       case 'animal':
-        return focoAnimal ? olhar(CASA[sexo].clone().add(v3(0.05, 0.95, 0)), v3(0.7, 0.55, 3.2), 3.3) : CAM_GERAL
+        return focoAnimal ? olhar(CASA[sexo].clone().add(v3(0.05, 0.95, 0)), naVista(0.7, 0.55, 3.2), 3.3) : vistaGeral(w, h)
       case 'interior':
-        return olhar(rumen.clone().add(v3(0.1, 0.05, 0)), v3(0.55, 0.42, 1), 2.7)
+        return olhar(rumen.clone().add(naVista(0.1, 0.05, 0)), naVista(0.55, 0.42, 1), 2.7)
       case 'regiao':
         return quadro && regiao ? enquadrarRegiao(quadro, regiao, w, h) : CAM_GERAL
       case 'pele':
         return enquadrarPilha(sexo, w, h)
       case 'bota':
-        return parte ? olhar(noMundoBota(parte), v3(0.35, 0.45, 1), 1.55) : olhar(BOTA.clone().add(v3(0.4, 0.12, -0.18)), v3(0.35, 0.45, 1), 2.85)
+        return parte ? olhar(noMundoBota(parte), naVista(0.35, 0.45, 1), 1.55) : olhar(BOTA.clone().add(naVista(0.4, 0.12, -0.18)), naVista(0.35, 0.45, 1), 2.85)
     }
   }, [modo, sexo, quadro, regiao, rumen, parte, ini, focoAnimal, tela])
 
@@ -311,11 +313,6 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
     }
     return null
   }, [quimico, modo, insumo, parte])
-  const fecharCartao = () => {
-    if (quimico) setQuimico(null)
-    else if (modo === 'interior') setInsumo(null)
-    else if (modo === 'bota') setParte(null)
-  }
 
   // ---------------------------------------------------------------- rótulos
   const ancoraRegiao = (s: Sexo, r: RegiaoId, cam: THREE.Camera): THREE.Vector3[] => {
@@ -353,6 +350,25 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
       {nota && <small>{nota}</small>}
     </>
   )
+
+  // "Ver na cadeia": dentro do rótulo do item escolhido, junto dele; leva ao Cone 3D com o elo escolhido
+  const idCone = cartao?.ids.find((id) => ctx.ix.porId.has(id))
+  const verNaCadeia = () =>
+    idCone && onVerNoCone ? (
+      <button
+        className="ver-cadeia"
+        onClick={(e) => {
+          e.stopPropagation()
+          onVerNoCone(idCone)
+        }}
+        title={`Abre o Cone 3D com ${ctx.ix.porId.get(idCone)?.nome} escolhido: de onde vem e o que depende dele`}
+      >
+        Ver na cadeia
+        <span className="ver-cadeia-seta" aria-hidden>
+          →
+        </span>
+      </button>
+    ) : null
 
   const rotulos: Rotulo[] = []
   // --- fazenda: o que está sob o ponteiro
@@ -422,6 +438,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
             <b>{ins.nome}</b>
             {lente === 'dependencia' && !ativo && <small>{NOME_DEP[ins.dep]}</small>}
             {ativo && <small>{lente === 'dependencia' ? ins.depNota : ins.nota}</small>}
+            {insumo === ins.id && verNaCadeia()}
           </span>
         ),
       })
@@ -453,7 +470,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
         id: `leg-${q.id}`,
         modo: 'legenda',
         dx: 24,
-        pontos: () => (anim.current.graf > 0.6 ? [baseGraf.clone().add(v3(0.09, l.y, 0))] : []),
+        pontos: () => (anim.current.graf > 0.6 ? [baseGraf.clone().addScaledVector(DIREITA, 0.09).add(v3(0, l.y, 0))] : []),
         classe: `legenda-q${apagado ? ' apagado' : ''}${ativo ? ' hover' : ''}`,
         conteudo: (
           <span onMouseEnter={() => setHover({ tipo: 'quimico', id: q.id })} onMouseLeave={() => setHover(null)} onClick={() => setQuimico((v) => (v === q.id ? null : q.id))}>
@@ -462,6 +479,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
             <em>{pctItem(itensGraf, i)}%</em>
             {lente === 'dependencia' && !ativo && <small>{depTag(q.dep)}</small>}
             {ativo && <small>{lente === 'dependencia' ? <>{depTag(q.dep)} {q.depNota}</> : `${q.detalhe} · ${q.faixa}`}</small>}
+            {quimico === q.id && verNaCadeia()}
           </span>
         ),
       })
@@ -471,7 +489,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
         id: 'leg-enchimento',
         modo: 'legenda',
         dx: 24,
-        pontos: () => (anim.current.graf > 0.6 ? [baseGraf.clone().add(v3(0.09, -GRAF_ALTURA / 2 - 0.12, 0))] : []),
+        pontos: () => (anim.current.graf > 0.6 ? [baseGraf.clone().addScaledVector(DIREITA, 0.09).add(v3(0, -GRAF_ALTURA / 2 - 0.12, 0))] : []),
         classe: 'nota-enchimento',
         conteudo: (
           <p>
@@ -552,6 +570,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
         conteudo: (
           <span onMouseEnter={() => setHover({ tipo: 'parte', id: pt.id })} onMouseLeave={() => setHover(null)} onClick={() => irFilho('bota', pt.id)}>
             {pilula(pt.n, pt.nome, quente ? pt.nota : undefined)}
+            {sel && verNaCadeia()}
           </span>
         ),
       })
@@ -602,7 +621,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
     <div className="bois">
       <Canvas
         className="cena"
-        camera={{ position: [1.15, 2.75, 6.6], fov: FOV, near: 0.05, far: 120 }}
+        camera={{ position: CAM_GERAL.pos.toArray(), fov: FOV, near: 0.05, far: 120 }}
         dpr={[1, 2]}
         gl={{ antialias: true, alpha: true, stencil: true }}
         resize={{ scroll: false, debounce: 0 }}
@@ -665,7 +684,7 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
           onHover={(id) => setHover(id ? { tipo: 'quimico', id } : null)}
           onClique={(id) => setQuimico((v) => (v === id ? null : id))}
         />
-        <Deslocamento cartao={!!cartao} />
+        <Deslocamento cartao={false} />
         <Projetor alvos={alvos} elementos={elementos} caminhos={caminhos} obstaculos={obstaculos} />
         <Diretor enquadramento={enquadramento} />
         <PlanoDaFrente />
@@ -715,7 +734,6 @@ export function VistaModelo3D({ ctx }: { ctx: Contexto }) {
       <NaCabeca>
         <SeletorSistema titulo="Cadeia produtiva do couro" valor={sistema} opcoes={SISTEMAS.map((x) => ({ id: x.id, codigo: x.codigo, nome: x.nome, sobre: x.sobre }))} onEscolher={irSistema} />
       </NaCabeca>
-      {cartao && <CartaoCadeia cadeia={ctx.cadeia} ix={ctx.ix} titulo={cartao.titulo} nota={cartao.nota} ids={cartao.ids} onFechar={fecharCartao} />}
       <NaFaixa>
         <Menu<Lente>
           rotulo="Lente"

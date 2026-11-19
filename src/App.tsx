@@ -1,14 +1,13 @@
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { carregarTudo, type Contexto } from './dados/contexto'
-import { caminho } from './dados/cadeia'
-import { calcularCone } from './lib/layout'
-import { COR, LENTES, parteGolfo, type Lente } from './lib/lentes'
+import { COR, LENTES, type Lente } from './lib/lentes'
 import { Ficha } from './componentes/Ficha'
 import { PainelChina, PainelOrmuz } from './componentes/PainelLente'
+import { PainelAmbiente } from './componentes/PainelAmbiente'
 import { Moldura } from './componentes/Moldura'
 import { BotaoFaixa, DocaContext, Menu } from './componentes/Faixa'
 import { Cone } from './vistas/Cone'
-import { Arvore } from './vistas/Arvore'
+import { VistaProcesso } from './vistas/Processo'
 import { VistaBrasil } from './vistas/Brasil'
 import { VistaMundo } from './vistas/Mundo'
 import { VistaOrmuz } from './vistas/Ormuz'
@@ -26,9 +25,8 @@ const VISTAS: { chave: Vista; rotulo: string }[] = [
   { chave: 'ormuz', rotulo: 'Ormuz 2026' },
   { chave: 'mercados', rotulo: 'Mercados e casos' },
 ]
-const NOME_ANEL: Record<string, string> = { c0: 'Planta', c1: 'Etapas', c2: 'Insumos e capacitações', c3: 'Materiais', c4: 'Matérias-primas' }
 // cor da bolinha de cada lente no menu da faixa: a mesma matiz que a lente usa no cone
-const COR_LENTE: Partial<Record<Lente, string>> = { importado: COR.conhaque, ormuz: COR.vermelho, china: COR.ambar, confianca: COR.cru }
+const COR_LENTE: Partial<Record<Lente, string>> = { importado: COR.conhaque, ormuz: COR.vermelho, china: COR.ambar, confianca: COR.cru, ambiente: '#5fa874' }
 
 export function App() {
   const [ctx, setCtx] = useState<Contexto | null>(null)
@@ -54,22 +52,14 @@ function Painel({ ctx }: { ctx: Contexto }) {
   const [vista, setVista] = useState<Vista>(vistaDoHash() ?? ((VISTAS.find((v) => v.chave === params.get('vista'))?.chave ?? 'bois') as Vista))
   const [lente, setLente] = useState<Lente>((LENTES.find((l) => l.chave === params.get('lente'))?.chave ?? 'estrutura') as Lente)
   const [sel, setSel] = useState<string | null>(params.get('elo') && ix.porId.has(params.get('elo')!) ? params.get('elo') : null)
-  const [hover, setHover] = useState<string | null>(null)
   const [insumo, setInsumo] = useState<string>(params.get('insumo') ?? 'ins.sulfato_cromo')
   const [caso, setCaso] = useState<Caso>((CASOS.find((c) => c.chave === params.get('caso'))?.chave ?? 'eua') as Caso)
-  const [arvore, setArvore] = useState<string[]>(['nucleo.viposa', 'sis.curtimento', 'ins.sulfato_cromo'])
   const [fontes, setFontes] = useState(false)
   // onde cada vista põe os próprios controles: na faixa e, acima dela, a legenda
   const [docaFaixa, setDocaFaixa] = useState<HTMLDivElement | null>(null)
   const [docaLegenda, setDocaLegenda] = useState<HTMLDivElement | null>(null)
   const [docaCabeca, setDocaCabeca] = useState<HTMLDivElement | null>(null)
   const doca = useMemo(() => ({ faixa: docaFaixa, legenda: docaLegenda, cabeca: docaCabeca }), [docaFaixa, docaLegenda, docaCabeca])
-  const aneisRef = useRef<Record<string, HTMLDivElement | null>>({})
-  const nucleoRef = useRef<HTMLDivElement | null>(null)
-
-  const cone = useMemo(() => calcularCone(cadeia), [cadeia])
-  const destaque = useMemo(() => (sel ? caminho(cadeia, ix, sel) : null), [cadeia, ix, sel])
-  const rotulosFixos = useMemo(() => rotulosDaLente(ctx, lente), [ctx, lente])
 
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
@@ -79,7 +69,6 @@ function Painel({ ctx }: { ctx: Contexto }) {
       const v = VISTAS[Number(e.key) - 1]
       if (/^[1-9]$/.test(e.key) && v) {
         setVista(v.chave)
-        setHover(null)
       }
     }
     const hash = () => {
@@ -111,10 +100,6 @@ function Painel({ ctx }: { ctx: Contexto }) {
     setVista('mundo')
     setSel(null)
   }
-  const abrirArvore = (coluna: number, id: string) => {
-    setArvore((c) => (c[coluna] === id && coluna > 0 ? c.slice(0, coluna) : [...c.slice(0, coluna), id]))
-    setSel(id === 'nucleo.viposa' ? null : id)
-  }
   const fichaAberta = noSel && (vista === 'cone' || vista === 'cadeia')
 
   return (
@@ -126,49 +111,26 @@ function Painel({ ctx }: { ctx: Contexto }) {
         <div className="cabeca-sistema" ref={setDocaCabeca} />
         <h1>Cadeia produtiva do couro</h1>
       </header>
-      {vista === 'cone' && (
-        <>
-          <Cone
-            cadeia={cadeia}
-            pos={cone.pos}
-            aneis={cone.aneis}
-            nos={cone.nos}
-            arestasIdx={cone.arestasIdx}
-            lente={lente}
-            selecionado={sel}
-            destaqueNos={destaque?.nos ?? null}
-            destaqueArestas={destaque?.arestas ?? null}
-            hover={hover}
-            rotulosFixos={rotulosFixos}
-            onHover={setHover}
-            onSelecionar={setSel}
-            aneisRef={aneisRef}
-            nucleoRef={nucleoRef}
-          />
-          <div className="aneis">
-            {cone.aneis.map((a) => (
-              <div key={a.chave} ref={(el) => { aneisRef.current[a.chave] = el }} className={`anel${a.camada === 0 ? ' anel-nucleo' : ''}`}>
-                <span>{NOME_ANEL[a.chave]}</span>
-                {a.camada > 0 && <em>{a.n}</em>}
-              </div>
-            ))}
-          </div>
-          <div ref={nucleoRef} className="rotulo-topo">
-            Couro Viposa
-            <em>Várzea Grande · Nova Andradina · Caçador</em>
-          </div>
-        </>
+      {vista === 'cone' && <Cone ctx={ctx} lente={lente} onLente={setLente} selecionado={sel} onSelecionar={setSel} cartaoAberto={!!noSel || lente === 'ormuz' || lente === 'china' || lente === 'ambiente'} />}
+      {vista === 'bois' && (
+        <VistaModelo3D
+          ctx={ctx}
+          onVerNoCone={(id) => {
+            setSel(id)
+            setVista('cone')
+          }}
+        />
       )}
-      {vista === 'bois' && <VistaModelo3D ctx={ctx} />}
-      {vista === 'cadeia' && <Arvore cadeia={cadeia} ix={ix} caminho={arvore} onAbrir={abrirArvore} selecionado={sel} />}
+      {vista === 'cadeia' && <VistaProcesso ctx={ctx} selecionado={sel} onSelecionar={setSel} />}
       {vista === 'brasil' && <VistaBrasil ctx={ctx} />}
       {vista === 'mundo' && <VistaMundo ctx={ctx} insumo={insumo} onInsumo={setInsumo} />}
       {vista === 'ormuz' && <VistaOrmuz ctx={ctx} onSelecionar={(id) => irParaMapa(id)} />}
       {vista === 'mercados' && <VistaMercados ctx={ctx} caso={caso} onCaso={setCaso} />}
 
-      {fichaAberta && <Ficha cadeia={cadeia} ix={ix} no={noSel!} onSelecionar={setSel} onVerNoMapa={noSel!.comercio ? () => irParaMapa(noSel!.id) : undefined} />}
+      {fichaAberta && <Ficha cadeia={cadeia} ix={ix} no={noSel!} onSelecionar={setSel} onVerNoMapa={noSel!.comercio ? () => irParaMapa(noSel!.id) : undefined} processo={ctx.processo} ixp={ctx.ixp} compacta={vista === 'cone'} />}
       {!fichaAberta && vista === 'cone' && lente === 'ormuz' && <PainelOrmuz cadeia={cadeia} onSelecionar={setSel} />}
       {!fichaAberta && vista === 'cone' && lente === 'china' && <PainelChina cadeia={cadeia} onSelecionar={setSel} />}
+      {!fichaAberta && vista === 'cone' && lente === 'ambiente' && <PainelAmbiente ctx={ctx} onSelecionar={setSel} />}
 
       <nav className="controles" aria-label="Controles">
         <div className="controles-legenda" ref={setDocaLegenda} />
@@ -177,10 +139,7 @@ function Painel({ ctx }: { ctx: Contexto }) {
             rotulo="Vista"
             valor={vista}
             opcoes={VISTAS.map((v, i) => ({ chave: v.chave, rotulo: v.rotulo, tecla: i + 1 }))}
-            onEscolher={(v) => {
-              setVista(v)
-              setHover(null)
-            }}
+            onEscolher={setVista}
           />
           {vista === 'cone' && (
             <Menu<Lente> rotulo="Lente" valor={lente} opcoes={LENTES.map((l) => ({ chave: l.chave, rotulo: l.rotulo, cor: COR_LENTE[l.chave] }))} onEscolher={setLente} />
@@ -196,25 +155,6 @@ function Painel({ ctx }: { ctx: Contexto }) {
     </div>
     </DocaContext.Provider>
   )
-}
-
-function rotulosDaLente(ctx: Contexto, lente: Lente): Set<string> {
-  const c = ctx.cadeia
-  const s = new Set<string>()
-  const ofertas = c.nos.filter((n) => n.lado === 'oferta' && n.camada >= 2)
-  if (lente === 'estrutura') {
-    c.nos.filter((n) => n.lado === 'oferta' && n.camada === 1).forEach((n) => s.add(n.id))
-    ;[...ofertas].sort((a, b) => (b.alcance_cadeia ?? 0) - (a.alcance_cadeia ?? 0)).slice(0, 8).forEach((n) => s.add(n.id))
-  } else if (lente === 'importado') {
-    ;[...ofertas].filter((n) => n.comercio).sort((a, b) => (b.comercio!.musd_2025 ?? 0) - (a.comercio!.musd_2025 ?? 0)).slice(0, 10).forEach((n) => s.add(n.id))
-  } else if (lente === 'ormuz') {
-    c.nos.filter((n) => (parteGolfo(n) ?? 0) >= 0.05).forEach((n) => s.add(n.id))
-  } else if (lente === 'china') {
-    c.nos.filter((n) => (n.comercio?.china_2025 ?? 0) >= 0.3).forEach((n) => s.add(n.id))
-  } else if (lente === 'confianca') {
-    c.nos.filter((n) => n.confianca === 'indício').forEach((n) => s.add(n.id))
-  }
-  return s
 }
 
 function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {

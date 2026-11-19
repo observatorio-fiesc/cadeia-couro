@@ -190,7 +190,7 @@
   padding: 5px 13px 6px 6px;
   background: rgba(20, 17, 13, 0.9);
   border: 1px solid rgba(246, 241, 231, 0.42);
-  border-radius: 16px;
+  border-radius: 3px;
   font-size: 11.5px;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -251,89 +251,6 @@
   border-color: var(--realce);
 }
 
-/* cartão "De onde vem": a cadeia do item escolhido, no canto de baixo à direita */
-.cartao-cadeia {
-  right: calc(var(--margem) + 6px);
-  bottom: var(--margem);
-  width: 330px;
-  max-height: calc(100% - var(--margem) * 2 - 60px);
-  overflow: auto;
-  animation: surge 0.35s ease-out both;
-}
-.cartao-corpo {
-  padding: 10px 14px 12px;
-}
-.cartao-corpo h3 {
-  margin: 0 0 2px;
-  font-family: var(--cond);
-  font-weight: 500;
-  font-size: 18px;
-  letter-spacing: 0.02em;
-}
-.cartao-nota {
-  margin: 0 0 8px;
-  font-size: 11px;
-  line-height: 1.45;
-  color: var(--traco-2);
-}
-.cartao-corpo section {
-  padding-top: 8px;
-  border-top: 1px solid var(--regua-2);
-}
-.cartao-corpo section + section {
-  margin-top: 8px;
-}
-.cartao-no b {
-  font-weight: 500;
-}
-.cartao-no em,
-.cartao-no small {
-  display: block;
-  font-style: normal;
-  font-size: 10px;
-  line-height: 1.4;
-  color: var(--traco-3);
-}
-.cartao-no small {
-  margin-top: 2px;
-  color: var(--traco-2);
-}
-.cartao-arvore {
-  list-style: none;
-  margin: 6px 0 0;
-  padding: 0;
-}
-.cartao-arvore li {
-  display: flex;
-  align-items: baseline;
-  gap: 6px;
-  padding: 2px 0;
-  font-size: 11px;
-  color: var(--traco-2);
-}
-.cartao-arvore li.indicio .cartao-nome {
-  text-decoration: underline dashed var(--traco-3);
-  text-underline-offset: 3px;
-}
-.cartao-ramo {
-  flex: none;
-  color: var(--traco-3);
-}
-.cartao-nome {
-  flex: 1;
-}
-.cartao-valor {
-  flex: none;
-  font-size: 10px;
-  color: var(--traco-3);
-  font-variant-numeric: tabular-nums;
-}
-.cartao-rodape {
-  margin: 10px 0 0;
-  font-size: 9.5px;
-  line-height: 1.4;
-  color: var(--traco-3);
-}
 .legenda-q > span {
   cursor: pointer;
 }
@@ -533,13 +450,6 @@
 }
 
 @media (max-width: 900px) {
-  .cartao-cadeia {
-    left: var(--margem);
-    right: var(--margem);
-    bottom: 60px;
-    width: auto;
-    max-height: 40%;
-  }
   .decomp-painel {
     top: 52px;
     left: var(--margem);
@@ -552,5 +462,42 @@
   }
   .transf-lista img {
     height: 76px;
+  }
+}
+/* "Ver na cadeia": dentro do rótulo do item escolhido, numa linha própria com filete acima; a seta anda
+   no hover, como no "Capacidade produtiva de SC" do visualizador do submarino */
+.ver-cadeia {
+  flex-basis: 100%;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-top: 5px;
+  padding: 5px 0 1px 2px;
+  font: inherit;
+  font-size: 10px;
+  font-weight: 500;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  text-align: left;
+  color: var(--conhaque);
+  border-top: 1px solid rgba(208, 132, 63, 0.35);
+  pointer-events: auto;
+  cursor: pointer;
+  animation: ver-cadeia-in 0.45s ease-out 0.25s both;
+}
+.ver-cadeia-seta {
+  transition: transform 0.2s;
+}
+.ver-cadeia:hover {
+  color: var(--traco);
+  border-top-color: var(--traco-3);
+}
+.ver-cadeia:hover .ver-cadeia-seta {
+  transform: translateX(3px);
+}
+@keyframes ver-cadeia-in {
+  from {
+    opacity: 0;
+    transform: translateY(-3px);
   }
 }
