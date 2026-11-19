@@ -1,11 +1,35 @@
 // Ficha do elo escolhido: o que é, de quem depende, o que alimenta, comércio e fontes.
 
 import type { Cadeia, Indice, No } from '../dados/cadeia'
+import type { IndiceProcesso, Processo } from '../dados/processo'
 import { inteiro, musd, pct, variacao } from '../lib/formato'
 
-type Props = { cadeia: Cadeia; ix: Indice; no: No; onSelecionar: (id: string | null) => void; onVerNoMapa?: () => void }
+type Props = { cadeia: Cadeia; ix: Indice; no: No; onSelecionar: (id: string | null) => void; onVerNoMapa?: () => void; processo?: Processo | null; ixp?: IndiceProcesso | null; /** no Cone 3D: só o nome, o que é, o alcance e a importação */ compacta?: boolean }
 
-export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa }: Props) {
+/**
+ * Em que operações do processo um elo entra: direto, se ele é entrada de alguma operação; senão, descendo
+ * pela cadeia (material, insumo) até as entradas, com o insumo por onde ele chega.
+ */
+function noProcesso(cadeia: Cadeia, ix: Indice, ixp: IndiceProcesso, id: string) {
+  const out: { etapa: string; op: string; papel: string; via?: string }[] = []
+  const vistos = new Set<string>([id])
+  const fila: { id: string; via?: string }[] = [{ id }]
+  while (fila.length) {
+    const { id: x, via } = fila.shift()!
+    for (const u of ixp.usos.get(x) ?? []) out.push({ etapa: u.op.etapa, op: u.op.nome, papel: u.entrada.papel, via: x === id ? undefined : ix.porId.get(x)?.nome })
+    if (ixp.usos.has(x) && x !== id) continue
+    for (const i of ix.dependentesDe.get(x) ?? []) {
+      const a = cadeia.arestas[i]
+      const d = ix.porId.get(a.para)
+      if (a.tipo === 'visual' || !d || d.lado !== 'oferta' || d.camada < 2 || vistos.has(a.para)) continue
+      vistos.add(a.para)
+      fila.push({ id: a.para, via })
+    }
+  }
+  return out
+}
+
+export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp, compacta }: Props) {
   const meta = cadeia.meta
   const camada = meta.camadas[no.lado]?.[String(no.camada)] ?? ''
   const tronco = meta.troncos[no.tronco] ?? no.tronco
@@ -17,9 +41,9 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa }: Props) {
   return (
     <aside className="ficha">
       <button className="fechar" onClick={() => onSelecionar(null)} aria-label="Fechar">×</button>
-      <div className="sobretitulo">{camada === tronco ? camada : `${camada} · ${tronco}`}</div>
+      {!compacta && <div className="sobretitulo">{camada === tronco ? camada : `${camada} · ${tronco}`}</div>}
       <h2>{no.nome}</h2>
-      {no.planta && <div className="planta">{no.planta}</div>}
+      {!compacta && no.planta && <div className="planta">{no.planta}</div>}
       {no.descricao && <p>{no.descricao}</p>}
       {no.gargalo && <p className="gargalo">{no.gargalo}</p>}
 
@@ -32,8 +56,12 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa }: Props) {
               {no.jusante} de {meta.base_alcance_cadeia} etapas, insumos, materiais e artigos dependem deste elo
             </span>
           </div>
-          <Linha rotulo="Artigos afetados" valor={pct(no.alcance_artigos)} />
-          <Linha rotulo="Valor exportado afetado (2025)" valor={pct(no.alcance_exportacao)} />
+          {!compacta && (
+            <>
+              <Linha rotulo="Artigos afetados" valor={pct(no.alcance_artigos)} />
+              <Linha rotulo="Valor exportado afetado (2025)" valor={pct(no.alcance_exportacao)} />
+            </>
+          )}
         </section>
       )}
 
@@ -80,27 +108,78 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa }: Props) {
         </section>
       )}
 
-      {entram.length > 0 && (
+      {!compacta && entram.length > 0 && (
         <section>
           <h3>{no.lado === 'demanda' ? 'Vem de' : 'Depende de'}</h3>
           <Chips ids={entram.map((a) => a.de)} ix={ix} onSelecionar={onSelecionar} marcados={new Set(entram.filter((a) => !a.essencial || a.confianca === 'indício').map((a) => a.de))} />
         </section>
       )}
-      {saem.length > 0 && (
+      {!compacta && processo && ixp && no.lado === 'oferta' && no.camada >= 2 && (() => {
+        const usos = noProcesso(cadeia, ix, ixp, no.id)
+        if (!usos.length) return null
+        // por etapa, na ordem do processo; cada operação uma vez, na cor do papel (o primeiro, se tem vários)
+        const grupos = processo.etapas
+          .map((e) => {
+            const us = usos.filter((u) => u.etapa === e.id)
+            const ops = new Map<string, string>()
+            for (const u of us) if (!ops.has(u.op)) ops.set(u.op, u.papel)
+            const vias = [...new Set(us.map((u) => u.via).filter(Boolean))]
+            return { id: e.id, ops: [...ops], vias }
+          })
+          .filter((g) => g.ops.length)
+        const nOps = grupos.reduce((s, g) => s + g.ops.length, 0)
+        const papeis = (Object.keys(processo.papeis) as (keyof typeof processo.papeis)[]).filter((pp) => usos.some((u) => u.papel === pp))
+        return (
+          <section>
+            <h3>
+              No processo · {nOps} {nOps === 1 ? 'operação' : 'operações'}
+              {grupos.length > 1 ? ` em ${grupos.length} etapas` : ''}
+            </h3>
+            {grupos.map((g) => (
+              <div key={g.id} className="processo-grupo">
+                <div className="processo-grupo-etapa">{ix.porId.get(g.id)?.nome ?? g.id}</div>
+                <p>
+                  {g.ops.map(([op, papel], i) => (
+                    <span key={op}>
+                      {i > 0 && <span className="nota-inline"> · </span>}
+                      <span className={`papel-${papel}`}>{op}</span>
+                    </span>
+                  ))}
+                  {g.vias.length > 0 && (
+                    <em className="nota-inline">
+                      {' '}
+                      — via {g.vias.slice(0, 3).join(', ')}
+                      {g.vias.length > 3 ? ` e mais ${g.vias.length - 3}` : ''}
+                    </em>
+                  )}
+                </p>
+              </div>
+            ))}
+            <p className="nota chaves-papel">
+              {papeis.map((pp) => (
+                <span key={pp} className={`papel-${pp}`}>
+                  ● <span className="nota-inline">{processo.papeis[pp].nome}</span>
+                </span>
+              ))}
+            </p>
+          </section>
+        )
+      })()}
+      {!compacta && saem.length > 0 && (
         <section>
           <h3>Alimenta</h3>
           <Chips ids={saem.map((a) => a.para)} ix={ix} onSelecionar={onSelecionar} marcados={new Set()} />
         </section>
       )}
 
-      <section className="fontes">
+      {!compacta && <section className="fontes">
         <h3>Confiança: {no.confianca}</h3>
         <ul>
           {no.fontes.map((f) => (
             <li key={f}>{meta.fontes[f] ?? f}</li>
           ))}
         </ul>
-      </section>
+      </section>}
     </aside>
   )
 }

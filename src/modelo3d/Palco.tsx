@@ -5,7 +5,7 @@ import { useFrame, useThree, type ThreeEvent } from '@react-three/fiber'
 import { CameraControls } from '@react-three/drei'
 import * as THREE from 'three'
 import { BRANCO, SUAVE_CAMERA, TAXA_FADE, TAXA_LINHAS_SAI, expo, linear, MENOS_MOVIMENTO } from './cena'
-import { DESLOC_PX, ESTACOES, GRAF_ALTURA, largo, type Enquadramento } from './lugares'
+import { DESLOC_PX, ESTACOES, GIRO_VISTA, GRAF_ALTURA, largo, type Enquadramento } from './lugares'
 import type { Alvo, Anim, Item, ModoRotulo } from './estado'
 
 /**
@@ -63,8 +63,9 @@ export function Animador({ anim }: { anim: MutableRefObject<Anim> }) {
 
 /**
  * A câmera, como no visualizador do submarino: camera-controls amortece alvo, distância e ângulos juntos
- * (smoothTime), girando em volta do alvo e nunca pelo caminho longo. Sem giro automático. O arraste
- * do usuário interrompe o voo; um novo enquadramento só vem de uma nova escolha.
+ * (smoothTime), girando em volta do alvo e nunca pelo caminho longo. Sem giro automático e sem controle
+ * do usuário (enabled = false desliga só o mouse e o toque; os voos programados continuam): a câmera só
+ * anda quando algo é escolhido, e todos os enquadramentos são do mesmo lado da cena (lugares.ts).
  */
 export function Diretor({ enquadramento }: { enquadramento: Enquadramento }) {
   const ref = useRef<ComponentRef<typeof CameraControls>>(null)
@@ -78,7 +79,7 @@ export function Diretor({ enquadramento }: { enquadramento: Enquadramento }) {
     c.normalizeRotations()
     primeiro.current = false
   }, [enquadramento])
-  return <CameraControls ref={ref} makeDefault smoothTime={SUAVE_CAMERA} minDistance={0.9} maxDistance={24} maxPolarAngle={1.45} dollyToCursor />
+  return <CameraControls ref={ref} makeDefault enabled={false} smoothTime={SUAVE_CAMERA} />
 }
 
 // gráfico ao lado: um ladrilho por químico, na proporção da dose
@@ -124,6 +125,8 @@ export function Grafico3D(p: { itens: Item[]; ladrilhos: Ladrilho[]; base: THREE
     const v = p.anim.current.graf
     g.visible = v > 0.01
     g.position.copy(p.base)
+    // o gráfico de frente para a câmera, como na vista de antes
+    g.rotation.y = GIRO_VISTA
     ladr.forEach((l, i) => {
       const apagado = !!p.foco && p.foco !== l.id
       foco[i] = expo(foco[i], apagado ? 0.19 : 1, d, TAXA_FADE * 1.6)
@@ -221,7 +224,7 @@ export function Projetor({
     // controles com a legenda acima dela
     const telas: Ret[] = []
     const base = gl.domElement.getBoundingClientRect()
-    document.querySelectorAll<HTMLElement>('.cartao-cadeia, .controles').forEach((el) => {
+    document.querySelectorAll<HTMLElement>('.ver-cadeia, .controles').forEach((el) => {
       const b = el.getBoundingClientRect()
       telas.push({ x0: b.left - base.left - 8, y0: b.top - base.top - 8, x1: b.right - base.left + 8, y1: b.bottom - base.top + 8 })
     })

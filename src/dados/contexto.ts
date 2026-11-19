@@ -1,7 +1,8 @@
 // Todos os arquivos que o painel lê (painel/public/data), carregados uma vez.
 
 import { geoArea, type GeoPermissibleObjects } from 'd3-geo'
-import { carregarCadeia, indexar, type Cadeia, type Indice } from './cadeia'
+import { carregarCadeia, indexar, recalcularAlcances, type Cadeia, type Indice } from './cadeia'
+import { aplicarProcesso, carregarProcesso, type IndiceProcesso, type Processo } from './processo'
 
 // As malhas seguem a RFC 7946 (anel externo anti-horário); o d3-geo trabalha na esfera e lê esse sentido como
 // "tudo menos o polígono". Polígono com área maior que meia esfera tem os anéis invertidos aqui.
@@ -51,6 +52,9 @@ export type GeoFC = { type: 'FeatureCollection'; features: GeoFeature[] }
 export type Contexto = {
   cadeia: Cadeia
   ix: Indice
+  /** o mapa do processo: as operações de cada etapa (null se processo.json faltar) */
+  processo: Processo | null
+  ixp: IndiceProcesso | null
   log: Logistica
   paises: Paises
   entradas: Entradas
@@ -66,8 +70,9 @@ async function json<T>(arq: string): Promise<T> {
 }
 
 export async function carregarTudo(): Promise<Contexto> {
-  const [cadeia, log, paises, entradas, abate, mercados, uf, rodovias, mundo] = await Promise.all([
+  const [cadeia, processo, log, paises, entradas, abate, mercados, uf, rodovias, mundo] = await Promise.all([
     carregarCadeia(),
+    carregarProcesso(),
     json<Logistica>('logistica.json'),
     json<Paises>('paises.json'),
     json<Entradas>('entradas.json'),
@@ -77,7 +82,11 @@ export async function carregarTudo(): Promise<Contexto> {
     json<GeoFC>('geo/rodovias.json'),
     json<GeoFC>('geo/mundo.json'),
   ])
-  return { cadeia, ix: indexar(cadeia), log, paises, entradas, abate, mercados, geo: { uf: corrigirSentido(uf), rodovias, mundo: corrigirSentido(mundo) } }
+  // o processo é a fonte das arestas de insumo para etapa; os alcances são refeitos depois dele
+  const ixp = processo ? aplicarProcesso(cadeia, processo) : null
+  if (ixp?.pendencias.length) console.warn(`Mapa do processo: ${ixp.pendencias.length} pendências`, ixp.pendencias)
+  recalcularAlcances(cadeia)
+  return { cadeia, ix: indexar(cadeia), processo, ixp, log, paises, entradas, abate, mercados, geo: { uf: corrigirSentido(uf), rodovias, mundo: corrigirSentido(mundo) } }
 }
 
 // Grupo geográfico da origem, para a cor dos fluxos

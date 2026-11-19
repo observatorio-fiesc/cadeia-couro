@@ -7,7 +7,7 @@ import * as THREE from 'three'
 import { matTopo } from './materiais'
 import { PALETA, PARTES_BOTA } from './receitas'
 import { BRANCO, LARG, expo, focoDe, superficie, traco, useFocos, useResolucao, type Traco } from './cena'
-import { BOTA } from './lugares'
+import { BOTA, GIRO_VISTA } from './lugares'
 import { bota } from './geometria'
 import type { Anim } from './estado'
 
@@ -53,7 +53,8 @@ function Clicavel({ obj, id, p, ativo }: { obj: THREE.Object3D; id: string; p: P
 }
 // Montada, com as peças um pouco afastadas (vista explodida fixa, sem movimento), para que as de dentro
 // apareçam. A escolhida vai para a frente do desenho.
-export const GIRO_BOTA = -0.5
+// três quartos, como antes, mas em relação à vista: a ponta para a direita, o lado de fora para a câmera
+export const GIRO_BOTA = -0.5 + GIRO_VISTA
 export function BotaCena(p: PropsItens) {
   const obj = useMemo(() => {
     const geo = bota()

@@ -24,6 +24,16 @@
   --painel-menu: rgba(29, 24, 20, 0.95);
   --realce: var(--conhaque); /* ponteiro */
   --margem: 26px;
+  /* mapa do processo (aba Cadeia): papel de cada entrada e tipo de cada saída, da paleta do painel */
+  --papel-incorporado: #cf8a52; /* couro: fica no produto */
+  --papel-auxiliar: #5daed2; /* rio: sai no banho */
+  --papel-maquina: #d9ccb6;
+  --papel-apoio: #a8987f;
+  --papel-saber: #efd28c; /* palha */
+  --saida-artigo: #eadfcb;
+  --saida-coproduto: #5fa874; /* mata */
+  --saida-residuo: #cf6a4a; /* argila */
+  --saida-efluente: #5daed2; /* rio, tracejado: o banho que sai */
   --mono: 'IBM Plex Mono', ui-monospace, monospace;
   --cond: 'IBM Plex Sans Condensed', 'Arial Narrow', sans-serif;
   /* visual único e escuro, de propósito (prancha de couro): sem variação clara */
@@ -90,6 +100,9 @@ button {
   letter-spacing: 0.22em;
   text-transform: uppercase;
   color: var(--traco-2);
+}
+.ficha .sobretitulo {
+  padding-right: 28px; /* não passa por baixo do × */
 }
 
 /* cabeçalho: número grande, leitura curta */
@@ -895,85 +908,6 @@ button {
   margin-top: 8px;
 }
 
-/* árvore da cadeia */
-.arvore {
-  position: absolute;
-  inset: 0;
-}
-.arvore-linhas {
-  position: absolute;
-  inset: 0;
-  pointer-events: none;
-}
-.arvore-linhas .ramo {
-  stroke: var(--traco-3);
-  stroke-width: 1;
-  fill: none;
-}
-.arvore-linhas .ramo-aberto {
-  stroke: var(--conhaque);
-  stroke-width: 1.4;
-}
-.no-arvore {
-  position: absolute;
-  transform: translate(-8px, -50%);
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  white-space: nowrap;
-  font-size: 12px;
-  color: var(--traco);
-  padding: 2px 4px 2px 0;
-  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
-}
-.no-arvore em {
-  font-style: normal;
-  font-size: 10.5px;
-}
-.no-arvore .circulo {
-  width: 16px;
-  height: 16px;
-  border: 1px solid var(--traco-2);
-  border-radius: 50%;
-  display: grid;
-  place-items: center;
-  font-size: 9.5px;
-  color: var(--traco-2);
-  background: var(--fundo-1);
-  flex: none;
-}
-.no-arvore .nome {
-  font-weight: 500;
-}
-.no-arvore .uf {
-  margin-left: 6px;
-  color: var(--conhaque);
-}
-.no-arvore .codigo,
-.no-arvore .mais {
-  color: var(--traco-3);
-}
-.no-arvore .alcance {
-  color: var(--traco-2);
-}
-.no-arvore:hover .nome,
-.no-arvore.aberto .nome {
-  color: var(--conhaque);
-}
-.no-arvore.aberto .circulo {
-  border-color: var(--conhaque);
-  color: var(--conhaque);
-  background: #3a2a1c;
-}
-.no-arvore.selecionado .circulo {
-  background: var(--conhaque);
-  color: var(--fundo-2);
-}
-.no-arvore.rotulo-esquerda {
-  flex-direction: row-reverse;
-  transform: translate(calc(-100% + 8px), -50%);
-}
-
 /* mapas */
 .mapa {
   position: absolute;
@@ -1414,4 +1348,1081 @@ button:focus-visible {
   letter-spacing: 0.08em;
   text-transform: uppercase;
   color: var(--traco-3);
+}
+
+/* ---------- mapa do processo (aba Cadeia) ---------- */
+
+.processo {
+  position: absolute;
+  inset: 0;
+}
+.processo-linhas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.processo-linhas .ramo {
+  stroke: var(--traco-3);
+  stroke-width: 1;
+  fill: none;
+}
+.processo-linhas .ramo-aberto {
+  stroke: var(--conhaque);
+  stroke-width: 1.4;
+}
+/* a linha do material, que liga as etapas de produção da primeira coluna */
+.processo-linhas .linha-material {
+  stroke: var(--traco-2);
+  stroke-width: 2;
+}
+.no-processo {
+  position: absolute;
+  transform: translate(-8px, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  white-space: nowrap;
+  font-size: 12px;
+  color: var(--traco);
+  padding: 2px 4px 2px 0;
+  overflow: hidden;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.no-processo .circulo {
+  width: 16px;
+  height: 16px;
+  border: 1.2px solid var(--cor);
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  font-size: 9.5px;
+  font-style: normal;
+  color: var(--traco-2);
+  background: var(--fundo-1);
+  flex: none;
+}
+.no-processo.forma-quadrado .circulo {
+  border-radius: 2px;
+}
+.no-processo.forma-tracejado .circulo {
+  border-style: dashed;
+}
+.no-processo .nome {
+  font-weight: 500;
+}
+.no-processo .sub {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-style: normal;
+  font-size: 10.5px;
+  color: var(--traco-3);
+}
+.no-processo:hover .nome,
+.no-processo.aberto .nome {
+  color: var(--conhaque);
+}
+.no-processo.aberto .circulo {
+  border-color: var(--conhaque);
+  color: var(--conhaque);
+  background: #3a2a1c;
+}
+.no-processo.selecionado .circulo {
+  background: var(--conhaque);
+  color: var(--fundo-2);
+}
+/* marcas de uma operação: o que entra (pontos) e o que sai (quadrados; tracejado, o efluente) */
+.marcas {
+  display: inline-flex;
+  gap: 4px;
+  margin-left: 2px;
+}
+.marca {
+  width: 7px;
+  height: 7px;
+  flex: none;
+}
+.marca-ponto {
+  border-radius: 50%;
+  background: var(--cor);
+}
+.marca-quadrado {
+  background: var(--cor);
+}
+.marca-tracejado {
+  border: 1px dashed var(--cor);
+}
+.processo-cab {
+  position: absolute;
+  transform: translateY(-50%);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  white-space: nowrap;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+/* o estado do material: o nome dele sobre a linha do processo */
+.processo-estado {
+  position: absolute;
+  transform: translate(-6px, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-size: 10.5px;
+  font-style: italic;
+  letter-spacing: 0.04em;
+  color: var(--traco-2);
+  white-space: nowrap;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.processo-estado i {
+  font-style: normal;
+  font-size: 10px;
+  color: var(--traco);
+}
+.processo-estado.artigo {
+  color: var(--traco);
+}
+.processo-estado.artigo::after {
+  content: 'vendido também';
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+}
+/* a linha do processo, no alto: etapas como paradas, estados sobre a linha, plantas como colchetes */
+.processo-linhas .linha-apoio {
+  stroke: var(--traco-3);
+  stroke-width: 1.4;
+  stroke-dasharray: 4 4;
+}
+.processo-linhas .linha-transporte {
+  stroke-dasharray: 5 4;
+}
+.processo-linhas .colchete-planta {
+  stroke: var(--traco-3);
+  stroke-width: 1;
+  fill: none;
+}
+.processo-planta {
+  position: absolute;
+  transform: translate(-50%, -100%);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  line-height: 1.5;
+  color: var(--traco-3);
+  text-align: center;
+  white-space: nowrap;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+.processo-planta span + span {
+  font-size: 8.5px;
+  color: var(--traco-3);
+  opacity: 0.8;
+}
+.parada {
+  position: absolute;
+  transform: translate(-50%, -8px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.25;
+  color: var(--traco-2);
+  text-align: center;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.parada-marca {
+  width: 16px;
+  height: 16px;
+  border: 1.6px solid var(--traco-2);
+  border-radius: 50%;
+  background: var(--fundo-1);
+  flex: none;
+}
+.parada-transporte {
+  font-size: 10.5px;
+  color: var(--traco-3);
+}
+.parada-transporte {
+  transform: translate(-50%, -5px);
+}
+.parada-transporte .parada-marca {
+  width: 10px;
+  height: 10px;
+  border-style: dashed;
+  border-width: 1.2px;
+  border-color: var(--traco-3);
+}
+.parada-apoio .parada-marca {
+  border-style: dashed;
+  border-color: var(--traco-3);
+}
+.parada:hover .parada-nome,
+.parada.aberta .parada-nome {
+  color: var(--conhaque);
+}
+.parada.aberta .parada-marca {
+  border-color: var(--conhaque);
+  background: #3a2a1c;
+  box-shadow: 0 0 0 4px rgba(207, 138, 82, 0.15);
+}
+.parada.selecionada .parada-marca {
+  background: var(--conhaque);
+}
+.processo-estado.na-linha {
+  transform: translate(-50%, -100%);
+  display: block;
+  width: max-content;
+  font-size: 10px;
+  line-height: 1.3;
+  white-space: normal;
+  text-align: center;
+}
+.processo-estado.na-linha i {
+  margin-right: 5px;
+}
+.processo-estado.na-linha.fim {
+  transform: translate(0, -100%);
+  text-align: left;
+}
+.processo-estado.na-linha.artigo::after {
+  content: none;
+}
+/* o produto: um nó da linha (◆ com o nome acima), sem caixa; na coluna, texto clicável */
+.produto-no {
+  position: absolute;
+  transform: translate(-50%, calc(-100% + 5px));
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 7px;
+  font: inherit;
+  font-size: 10.5px;
+  font-style: italic;
+  line-height: 1.25;
+  color: var(--traco-2);
+  text-align: center;
+  width: max-content;
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+}
+.produto-marca {
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  border: 1.4px solid var(--traco-2);
+  background: var(--fundo);
+  flex: none;
+}
+.produto-no:hover,
+.produto-no.escolhido,
+.produto-link:hover,
+.produto-link.escolhido {
+  color: var(--conhaque);
+}
+.produto-no:hover .produto-marca {
+  border-color: var(--conhaque);
+}
+.produto-no.escolhido .produto-marca {
+  border-color: var(--conhaque);
+  background: var(--conhaque);
+}
+.produto-link {
+  font: inherit;
+  font-size: 10.5px;
+  font-style: italic;
+  cursor: pointer;
+}
+.no-processo.apagado {
+  opacity: 0.3;
+}
+.no-processo.produz .sub {
+  color: var(--conhaque);
+}
+.sem-quebra {
+  white-space: nowrap;
+}
+.vendido {
+  display: inline-block;
+  width: 5px;
+  height: 5px;
+  margin-left: 5px;
+  vertical-align: 1px;
+  background: var(--saida-artigo);
+}
+/* a árvore da cadeia: cada produto abre em como é feito */
+.arvore-cadeia {
+  position: absolute;
+  left: 32px;
+  top: 76px;
+  overflow: auto;
+  scrollbar-width: thin;
+  scrollbar-color: var(--traco-4) transparent;
+}
+.arvore-titulo {
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  margin: 0 0 10px 2px;
+}
+.arvore-corpo {
+  position: relative;
+}
+.arvore-linhas {
+  position: absolute;
+  inset: 0;
+  pointer-events: none;
+}
+.arvore-linhas .ramo-arvore {
+  stroke: var(--traco-4);
+  stroke-width: 1;
+  fill: none;
+}
+.arvore-linhas .ramo-arvore.produto {
+  stroke: rgba(207, 138, 82, 0.6);
+  stroke-width: 1.4;
+}
+.arvore-linha {
+  position: absolute;
+  right: 0;
+  transform: translate(-7px, -50%);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font: inherit;
+  font-size: 12px;
+  color: var(--traco);
+  text-align: left;
+  white-space: nowrap;
+  overflow: hidden;
+  cursor: pointer;
+  padding: 2px 0;
+}
+.arvore-linha:hover .arvore-nome,
+.arvore-linha.marcado .arvore-nome {
+  color: var(--conhaque) !important;
+}
+.arvore-nome {
+  flex: none;
+  font-weight: 500;
+}
+.arvore-nota {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-size: 10.5px;
+  color: var(--traco-3);
+}
+/* a seta de abrir: aponta para a direita fechada, para baixo aberta */
+.arvore-seta {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin: 0 3px 0 -1px;
+  border-right: 1.5px solid var(--conhaque);
+  border-bottom: 1.5px solid var(--conhaque);
+  transform: rotate(-45deg);
+  transition: transform 0.15s;
+}
+.arvore-seta.aberta {
+  transform: translateY(-2px) rotate(45deg);
+}
+.arvore-cab {
+  position: absolute;
+  transform: translate(-4px, -50%);
+  font-size: 9.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  white-space: nowrap;
+}
+.arvore-cab .arvore-nota {
+  letter-spacing: 0.06em;
+  text-transform: none;
+}
+.arvore-marca {
+  flex: none;
+  width: 14px;
+  height: 14px;
+  display: grid;
+  place-items: center;
+}
+.arvore-marca.losango::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  transform: rotate(45deg);
+  border: 1.4px solid var(--conhaque);
+  background: var(--fundo);
+}
+.arvore-produto.aberto .arvore-marca.losango::before,
+.arvore-produto.marcado .arvore-marca.losango::before {
+  background: var(--conhaque);
+}
+.arvore-produto .arvore-nome {
+  font-size: 12.5px;
+}
+.arvore-marca.numero {
+  border: 1px solid var(--traco-3);
+  border-radius: 50%;
+  font-size: 8.5px;
+  font-style: normal;
+  color: var(--traco-2);
+  background: var(--fundo);
+}
+.arvore-marca.ponto::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  border-radius: 50%;
+  background: var(--cor);
+}
+.arvore-marca.quadrado::before {
+  content: '';
+  width: 9px;
+  height: 9px;
+  background: var(--cor);
+}
+.arvore-marca.tracejado::before {
+  content: '';
+  width: 8px;
+  height: 8px;
+  border: 1px dashed var(--cor);
+}
+.arvore-op .arvore-nome {
+  font-weight: 400;
+}
+/* chaves da legenda do processo */
+.legenda-processo .legenda-titulo + .legenda-chaves {
+  margin-bottom: 8px;
+}
+.legenda-chaves .chave-ponto,
+.legenda-chaves .chave-quadrado,
+.legenda-chaves .chave-tracejado {
+  width: 9px;
+  height: 9px;
+  flex: none;
+}
+.legenda-chaves .chave-ponto {
+  border-radius: 50%;
+  background: var(--cor);
+}
+.legenda-chaves .chave-quadrado {
+  border-radius: 0;
+  background: var(--cor);
+}
+.legenda-chaves .chave-tracejado {
+  border-radius: 0;
+  border: 1px dashed var(--cor);
+}
+.legenda-chaves .chave-losango::before {
+  content: '◆';
+  font-style: normal;
+  font-size: 10px;
+  color: var(--traco);
+}
+.legenda-chaves .chave-losango {
+  width: auto;
+  height: auto;
+}
+/* cartões de operação e de saída, na coluna da ficha */
+.cartao-processo .linha-botao {
+  width: 100%;
+  font: inherit;
+  font-size: 12px;
+  text-align: left;
+  cursor: pointer;
+}
+.cartao-processo .linha-botao:hover span {
+  color: var(--conhaque);
+}
+.fontes-lista {
+  margin: 0;
+  padding-left: 16px;
+  color: var(--traco-2);
+  line-height: 1.5;
+  font-size: 11px;
+}
+.nota-inline {
+  font-style: normal;
+  color: var(--traco-3);
+}
+/* papel de uma entrada, na ficha do elo (seção "No processo") */
+.processo-grupo {
+  padding: 6px 0;
+  border-bottom: 1px dashed var(--traco-4, rgba(255, 255, 255, 0.08));
+}
+.processo-grupo-etapa {
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  margin-bottom: 3px;
+}
+.processo-grupo p {
+  margin: 0;
+  font-size: 12px;
+  line-height: 1.5;
+}
+.chaves-papel {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  margin-top: 8px;
+}
+.papel-incorporado {
+  color: var(--papel-incorporado) !important;
+}
+.papel-auxiliar {
+  color: var(--papel-auxiliar) !important;
+}
+.papel-maquina {
+  color: var(--papel-maquina) !important;
+}
+.papel-apoio {
+  color: var(--papel-apoio) !important;
+}
+.papel-saber {
+  color: var(--papel-saber) !important;
+}
+
+/* ---------- Cone 3D, no padrão da rede da criticidade da referência ---------- */
+
+/* as lentes como capítulos, no alto: número pequeno, a ativa sublinhada */
+.capitulos {
+  position: absolute;
+  top: calc(var(--margem) + 2px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  gap: 4px;
+  z-index: 5;
+}
+.capitulos button {
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  padding: 6px 10px 7px;
+  border-bottom: 1px solid var(--regua-2);
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+  transition: color 0.2s, border-color 0.2s;
+}
+.capitulos button em {
+  font-style: normal;
+  font-size: 9px;
+  margin-right: 6px;
+  color: var(--traco-3);
+}
+.capitulos button:hover {
+  color: var(--traco);
+}
+.capitulos button.ativo {
+  color: var(--traco);
+  border-bottom: 1.5px solid var(--conhaque);
+}
+
+/* a coluna da lente, à esquerda, sem caixa */
+.historia {
+  position: absolute;
+  top: 100px;
+  left: calc(var(--margem) + 6px);
+  width: 320px;
+  z-index: 4;
+  pointer-events: none;
+  font-size: 11.5px;
+  line-height: 1.55;
+  color: var(--traco-2);
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+  animation: fade-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
+}
+.historia h2 {
+  display: inline-block;
+  margin: 0 0 14px;
+  padding-bottom: 6px;
+  font-family: var(--mono);
+  font-size: 10.5px;
+  font-weight: 600;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco);
+  border-bottom: 1px solid var(--regua);
+}
+.historia p {
+  margin: 0 0 10px;
+}
+.historia b {
+  font-weight: 500;
+}
+.historia .historia-dica {
+  margin-top: 16px;
+  font-size: 10.5px;
+  color: var(--traco-3);
+}
+
+/* o nome de cada altura, junto à silhueta esquerda */
+.cone-nivel {
+  display: inline-block;
+  transform: translate(-100%, -50%);
+  padding-right: 8px;
+  white-space: nowrap;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  border-right: 1px solid var(--regua);
+  text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
+  animation: fade-in 0.8s ease-out both;
+}
+
+/* os rótulos da rede: nome e valor; o escolhido, grande */
+.cone-rotulo {
+  display: inline-flex;
+  align-items: baseline;
+  transform: translate(12px, -50%);
+  white-space: nowrap;
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  color: var(--traco-2);
+  cursor: pointer;
+  text-shadow: 0 0 6px var(--halo), 0 0 2px var(--halo);
+  animation: fade-in 0.5s ease-out both;
+}
+.cone-rotulo:hover {
+  color: var(--conhaque);
+}
+.cone-rotulo b {
+  margin-left: 8px;
+  font-family: var(--cond);
+  font-size: 12px;
+  font-weight: 400;
+  color: var(--traco);
+  font-variant-numeric: tabular-nums;
+}
+.cone-rotulo.etapa {
+  color: var(--conhaque);
+  letter-spacing: 0.06em;
+}
+.cone-rotulo.raiz {
+  font-size: 10.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco);
+}
+.cone-rotulo.raiz b {
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: #f08a76;
+}
+.cone-rotulo.grande {
+  flex-direction: column;
+  align-items: flex-start;
+  font-size: 13px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--traco);
+}
+.cone-rotulo.grande b {
+  margin: 2px 0 0;
+  font-size: 26px;
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  text-transform: none;
+}
+.cone-rotulo em {
+  margin-top: 2px;
+  width: max-content;
+  max-width: 300px;
+  white-space: normal;
+  font-style: normal;
+  font-size: 9px;
+  letter-spacing: 0.02em;
+  text-transform: none;
+  color: var(--traco-2);
+}
+.cone-rotulo.depende b {
+  color: #f08a76;
+}
+.cone-rotulo.apontado {
+  color: var(--traco);
+}
+.cone-rotulo.apontado b {
+  color: var(--conhaque);
+}
+.cone-rotulo.virado {
+  transform: translate(calc(-100% - 12px), -50%);
+}
+.cone-rotulo.virado.grande {
+  align-items: flex-end;
+  text-align: right;
+}
+@keyframes fade-in {
+  from {
+    opacity: 0;
+    translate: 0 4px;
+  }
+  to {
+    opacity: 1;
+    translate: 0 0;
+  }
+}
+/* o rótulo grande fica mais longe da marca, que também é maior */
+.cone-rotulo.grande {
+  transform: translate(26px, -50%);
+}
+.cone-rotulo.grande.virado {
+  transform: translate(calc(-100% - 26px), -50%);
+}
+
+/* ---------- lente Ambiente do cone: o painel da direita ---------- */
+.numeros-ambiente {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 14px 18px;
+  margin: 16px 0 6px;
+}
+.numeros-ambiente div {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  padding-top: 8px;
+  border-top: 1px solid var(--regua-2);
+}
+.numeros-ambiente b {
+  font-family: var(--cond);
+  font-size: 26px;
+  font-weight: 200;
+  letter-spacing: -0.02em;
+  color: var(--traco);
+  font-variant-numeric: tabular-nums;
+}
+.numeros-ambiente span {
+  font-size: 10.5px;
+  line-height: 1.4;
+  color: var(--traco-2);
+}
+.numeros-ambiente .alerta b {
+  color: var(--vermelho);
+}
+.painel-ambiente .atencao {
+  display: grid;
+  grid-template-columns: 22px 1fr;
+  gap: 4px;
+  width: 100%;
+  padding: 8px 0;
+  font: inherit;
+  font-size: 11px;
+  line-height: 1.45;
+  text-align: left;
+  color: var(--traco-2);
+  border-bottom: 1px dashed var(--regua-2);
+  cursor: pointer;
+}
+.painel-ambiente .atencao em {
+  font-style: normal;
+  width: 16px;
+  height: 16px;
+  display: grid;
+  place-items: center;
+  font-size: 9px;
+  border: 1px solid var(--vermelho);
+  border-radius: 50%;
+  color: var(--traco);
+}
+.painel-ambiente .atencao strong {
+  display: block;
+  font-weight: 500;
+  font-size: 12px;
+  color: var(--traco);
+  margin-bottom: 2px;
+}
+.painel-ambiente .atencao:hover strong {
+  color: var(--conhaque);
+}
+.painel-ambiente .regra .nota {
+  margin: 2px 0 8px;
+}
+/* o que sai das etapas, no cone: o destino em tinta, sem número */
+.cone-rotulo.saida {
+  color: var(--traco-2);
+}
+.cone-rotulo.saida b {
+  font-family: var(--mono);
+  font-size: 9px;
+  color: var(--traco-3);
+}
+/* as lentes começam onde começa a área livre (depois da coluna do texto), para não passar sob a ficha */
+.capitulos {
+  left: 372px;
+  transform: none;
+}
+@media (max-width: 1500px) {
+  .capitulos {
+    gap: 0;
+  }
+  .capitulos button {
+    padding: 6px 7px 7px;
+    letter-spacing: 0.1em;
+    font-size: 9.5px;
+  }
+}
+.cone-rotulo em.vem-de {
+  color: var(--traco-3);
+}
+
+/* ---------- Cone 3D: o elo na cadeia (diagrama aberto de "ver na cadeia") ---------- */
+.cone-abrir {
+  margin-top: 8px;
+  padding: 3px 0 2px;
+  font: inherit;
+  font-size: 10px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--conhaque);
+  border-bottom: 1px solid rgba(208, 132, 63, 0.45);
+  cursor: pointer;
+  pointer-events: auto;
+}
+.cone-abrir:hover {
+  color: var(--traco);
+  border-bottom-color: var(--traco);
+}
+.cone-rotulo.virado .cone-abrir {
+  align-self: flex-end;
+}
+.elo-centro {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 3px;
+  width: 340px;
+  transform: translate(-50%, 0);
+  text-align: center;
+  white-space: normal;
+  line-height: 1.3;
+  text-shadow: 0 0 8px var(--halo), 0 0 2px var(--halo);
+  animation: fade-in 0.5s ease-out both;
+}
+.elo-centro b {
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--conhaque);
+}
+.elo-centro em {
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--traco-2);
+}
+.elo-voltar {
+  margin-top: 6px;
+  font: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  cursor: pointer;
+}
+.elo-voltar:hover {
+  color: var(--conhaque);
+}
+.elo-link {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 7px;
+  padding: 2px 0;
+  font: inherit;
+  font-size: 12px;
+  color: var(--traco-2);
+  white-space: nowrap;
+  text-shadow: 0 0 8px var(--halo), 0 0 2px var(--halo);
+  cursor: pointer;
+  animation: fade-in 0.5s ease-out both;
+  transition: color 0.2s;
+}
+.elo-link:hover:not(:disabled) {
+  color: var(--conhaque);
+}
+.elo-link:disabled {
+  cursor: default;
+}
+.elo-link b {
+  font-family: var(--cond);
+  font-size: 14px;
+  font-weight: 500;
+  color: var(--traco);
+}
+.elo-link i {
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+}
+.elo-in {
+  transform: translate(-100%, -50%);
+  flex-direction: row-reverse;
+}
+.elo-in.opcional {
+  color: var(--traco-3);
+}
+/* à direita: o nome na sua largura, quebrando só depois de 250 px */
+.elo-out {
+  display: block;
+  width: max-content;
+  max-width: 250px;
+  transform: translate(0, -50%);
+  white-space: normal;
+  text-align: left;
+  line-height: 1.3;
+}
+.elo-out b {
+  margin-right: 7px;
+}
+.elo-out.para,
+.elo-out.para b {
+  color: #f08a76;
+}
+.elo-vazio,
+.elo-capacitacoes {
+  display: block;
+  width: 260px;
+  transform: translate(-100%, -50%);
+  white-space: normal;
+  text-align: right;
+  font-size: 10.5px;
+  line-height: 1.45;
+  color: var(--traco-3);
+  text-shadow: 0 0 8px var(--halo), 0 0 2px var(--halo);
+  animation: fade-in 0.6s ease-out both;
+}
+.elo-capacitacoes i {
+  display: block;
+  font-style: normal;
+  font-size: 8.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+}
+.elo-etapa {
+  display: block;
+  width: 96px;
+  transform: translate(-50%, -100%);
+  font: inherit;
+  font-size: 9.5px;
+  line-height: 1.25;
+  text-align: center;
+  color: var(--traco-3);
+  text-shadow: 0 0 8px var(--halo), 0 0 2px var(--halo);
+  cursor: pointer;
+  animation: fade-in 0.5s ease-out both;
+}
+.elo-etapa:hover {
+  color: var(--conhaque);
+}
+.elo-etapa.para {
+  color: #f08a76;
+}
+.elo-etapa.ele {
+  color: var(--conhaque);
+  cursor: default;
+}
+.elo-processo {
+  display: block;
+  width: 760px;
+  transform: translate(-50%, -100%);
+  text-align: center;
+  white-space: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+  text-shadow: 0 0 8px var(--halo), 0 0 2px var(--halo);
+  animation: fade-in 0.6s ease-out both;
+}
+.elo-processo b {
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  text-transform: none;
+  color: #f08a76;
+}
+
+/* lente Ambiente: o que destacar, na coluna da esquerda; vazio, tudo */
+.filtros-ambiente {
+  margin-top: 16px;
+  pointer-events: auto;
+}
+.filtros-linha {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  gap: 4px 12px;
+  margin-bottom: 10px;
+}
+.filtros-titulo {
+  flex-basis: 100%;
+  font-size: 8.5px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+}
+.filtro {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  padding: 2px 0 3px;
+  font: inherit;
+  font-size: 11px;
+  color: var(--traco-2);
+  border-bottom: 1px solid transparent;
+  cursor: pointer;
+  transition: color 0.2s, opacity 0.2s, border-color 0.2s;
+}
+.filtro:hover {
+  color: var(--traco);
+}
+.filtro.ligado {
+  color: var(--traco);
+  border-bottom-color: var(--cor);
+}
+.filtro.apagado {
+  opacity: 0.45;
+}
+.filtro i {
+  flex: none;
+  width: 8px;
+  height: 8px;
+}
+.filtro-ponto {
+  border-radius: 50%;
+  background: var(--cor);
+}
+.filtro-quadrado {
+  background: var(--cor);
+}
+.filtro-tracejado {
+  border: 1px dashed var(--cor);
+}
+.filtro-tudo {
+  font: inherit;
+  font-size: 9.5px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--conhaque);
+  cursor: pointer;
+}
+.filtro-tudo:hover {
+  color: var(--traco);
 }

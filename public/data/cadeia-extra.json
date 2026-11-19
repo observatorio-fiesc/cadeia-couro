@@ -1,5 +1,5 @@
 {
-  "nota": "Acréscimos à cadeia (cadeia.json), juntados na carga por src/dados/cadeia.ts. Ficam à parte porque o gerador (../Painel Viposa/scripts/montar_cadeia.py) não está neste repositório: ao gerar a cadeia de novo, levar estes nós e arestas para lá e apagar este arquivo. Alcances (jusante, alcance_cadeia) são recalculados na carga.",
+  "nota": "Acréscimos e correções à cadeia (cadeia.json), juntados na carga por src/dados/cadeia.ts: nós novos, nós renomeados (alterar), arestas novas e arestas removidas (remover_arestas). Ficam à parte porque o gerador (../Painel Viposa/scripts/montar_cadeia.py) não está neste repositório: ao gerar a cadeia de novo, levar tudo para lá e apagar este arquivo. As arestas de insumo para etapa saem do mapa do processo (processo.json). Alcances são recalculados na carga.",
   "fontes": {
     "tec-calcado": "Literatura técnica de calçado: componentes e construção do calçado (palmilha de montagem, contraforte, ilhoses, cadarço, embalagem)",
     "iso20345": "ABNT NBR ISO 20345: calçado de segurança (biqueira para impacto de 200 J; palmilha resistente à perfuração nas classes que exigem essa proteção)"
@@ -15,8 +15,14 @@
       "planta": "MS",
       "descricao": "Formiato de sódio, bicarbonato de sódio e sintanos: tiram o ácido do wet blue antes do recurtimento.",
       "confianca": "fato técnico",
-      "fontes": ["tec-curtume"],
-      "insumos": ["ins.acido_formico", "ins.carbonato_sodio", "mat.aromaticos"]
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [
+        "ins.acido_formico",
+        "ins.carbonato_sodio",
+        "mat.aromaticos"
+      ]
     },
     {
       "id": "rec.magnesita",
@@ -27,7 +33,9 @@
       "tronco": "minerais",
       "descricao": "Minério do óxido de magnésio, um dos basificantes do curtimento.",
       "confianca": "fato técnico",
-      "fontes": ["tec-quimica"],
+      "fontes": [
+        "tec-quimica"
+      ],
       "insumos": []
     },
     {
@@ -40,8 +48,12 @@
       "planta": "SC",
       "descricao": "Lixam a flor (nobuck, flor corrigida) e o carnal (camurça).",
       "confianca": "fato técnico",
-      "fontes": ["tec-curtume"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.maquinas_acabamento",
@@ -53,8 +65,12 @@
       "planta": "SC",
       "descricao": "Aplicam as camadas de acabamento sobre a flor.",
       "confianca": "fato técnico",
-      "fontes": ["tec-curtume"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.medidoras",
@@ -66,8 +82,12 @@
       "planta": "SC",
       "descricao": "O couro é vendido por área: cada peça é medida no fim do acabamento.",
       "confianca": "fato técnico",
-      "fontes": ["tec-curtume"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.injetoras_pu",
@@ -79,21 +99,29 @@
       "planta": "SC",
       "descricao": "Injetam o solado de PU direto no cabedal montado.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.maquinas_costura",
-      "nome": "Balancins e máquinas de costura",
+      "nome": "Máquinas de costura",
       "lado": "oferta",
       "camada": 2,
       "tipo": "equipamento",
       "tronco": "equipamentos",
       "planta": "SC",
-      "descricao": "Cortam o couro acabado e costuram os cabedais.",
+      "descricao": "Costuram as peças do cabedal.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.palmilha_montagem",
@@ -105,8 +133,13 @@
       "planta": "SC",
       "descricao": "Base onde o cabedal é montado e o solado é injetado; de celulose ou de não tecido.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.celulose", "mat.plasticos"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.celulose",
+        "mat.plasticos"
+      ]
     },
     {
       "id": "ins.palmilha_antiperfuracao",
@@ -118,8 +151,13 @@
       "planta": "SC",
       "descricao": "Resiste à perfuração pela sola; de aço ou têxtil. Só nos modelos com essa proteção.",
       "confianca": "fato técnico",
-      "fontes": ["iso20345"],
-      "insumos": ["mat.aco", "mat.plasticos"]
+      "fontes": [
+        "iso20345"
+      ],
+      "insumos": [
+        "mat.aco",
+        "mat.plasticos"
+      ]
     },
     {
       "id": "ins.contraforte",
@@ -131,8 +169,12 @@
       "planta": "SC",
       "descricao": "Reforço termoplástico do calcanhar.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.plasticos"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.plasticos"
+      ]
     },
     {
       "id": "ins.ilhoses",
@@ -144,8 +186,12 @@
       "planta": "SC",
       "descricao": "Peças de metal por onde passa o cadarço.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.aco"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.aco"
+      ]
     },
     {
       "id": "ins.cadarcos",
@@ -157,8 +203,12 @@
       "planta": "SC",
       "descricao": "De fibra sintética.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.plasticos"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.plasticos"
+      ]
     },
     {
       "id": "ins.caixas",
@@ -170,8 +220,12 @@
       "planta": "SC",
       "descricao": "Embalagem de cada par.",
       "confianca": "fato técnico",
-      "fontes": ["tec-calcado"],
-      "insumos": ["mat.celulose"]
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [
+        "mat.celulose"
+      ]
     },
     {
       "id": "mat.celulose",
@@ -182,41 +236,348 @@
       "tronco": "floresta",
       "descricao": "Fibra de madeira para palmilhas e caixas.",
       "confianca": "fato técnico",
-      "fontes": ["tec-quimica"],
-      "insumos": ["mat.madeira_pinus"]
+      "fontes": [
+        "tec-quimica"
+      ],
+      "insumos": [
+        "mat.madeira_pinus"
+      ]
+    },
+    {
+      "id": "ins.bactericidas",
+      "nome": "Bactericidas",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "insumo químico",
+      "tronco": "quimica",
+      "descricao": "Conservam a pele durante o remolho.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [],
+      "planta": "MT"
+    },
+    {
+      "id": "ins.descarnadeiras",
+      "nome": "Descarnadeiras",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "equipamento",
+      "tronco": "equipamentos",
+      "descricao": "Retiram a carne e a gordura aderidas ao lado de dentro da pele.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [],
+      "planta": "MT"
+    },
+    {
+      "id": "ins.rebaixadeiras",
+      "nome": "Rebaixadeiras",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "equipamento",
+      "tronco": "equipamentos",
+      "descricao": "Igualam a espessura do wet blue; o que sai é a serragem cromada.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [],
+      "planta": "MS"
+    },
+    {
+      "id": "ins.secadores_couro",
+      "nome": "Secadores",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "equipamento",
+      "tronco": "equipamentos",
+      "descricao": "Secam o couro recurtido e engraxado: o que sai é o crust.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "insumos": [],
+      "planta": "MS"
+    },
+    {
+      "id": "ins.adesivos",
+      "nome": "Adesivos",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "insumo",
+      "tronco": "calcado",
+      "descricao": "Colam o cabedal à palmilha na montagem.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [],
+      "planta": "SC"
+    },
+    {
+      "id": "ins.balancins",
+      "nome": "Balancins de corte",
+      "lado": "oferta",
+      "camada": 2,
+      "tipo": "equipamento",
+      "tronco": "equipamentos",
+      "descricao": "Cortam as peças do cabedal no couro acabado, com facas no formato de cada peça.",
+      "confianca": "fato técnico",
+      "fontes": [
+        "tec-calcado"
+      ],
+      "insumos": [],
+      "planta": "SC"
     }
   ],
   "arestas": [
-    { "de": "ins.neutralizantes", "para": "sis.recurtimento", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.acido_formico", "para": "ins.neutralizantes", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.carbonato_sodio", "para": "ins.neutralizantes", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.aromaticos", "para": "ins.neutralizantes", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.carbonato_sodio", "para": "ins.basificantes", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "rec.magnesita", "para": "ins.basificantes", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.lixadeiras", "para": "sis.acabamento", "tipo": "insumo", "essencial": false, "confianca": "indício", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.lixadeiras", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.maquinas_acabamento", "para": "sis.acabamento", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.maquinas_acabamento", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.medidoras", "para": "sis.acabamento", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.medidoras", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.injetoras_pu", "para": "sis.manufatura", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.injetoras_pu", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.maquinas_costura", "para": "sis.manufatura", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.maquinas_costura", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.palmilha_montagem", "para": "sis.manufatura", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.celulose", "para": "ins.palmilha_montagem", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.plasticos", "para": "ins.palmilha_montagem", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.palmilha_antiperfuracao", "para": "sis.manufatura", "tipo": "insumo", "essencial": false, "confianca": "indício", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.palmilha_antiperfuracao", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.plasticos", "para": "ins.palmilha_antiperfuracao", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.contraforte", "para": "sis.manufatura", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.plasticos", "para": "ins.contraforte", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.ilhoses", "para": "sis.manufatura", "tipo": "insumo", "essencial": false, "confianca": "indício", "valor_usd": null },
-    { "de": "mat.aco", "para": "ins.ilhoses", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.cadarcos", "para": "sis.manufatura", "tipo": "insumo", "essencial": false, "confianca": "indício", "valor_usd": null },
-    { "de": "mat.plasticos", "para": "ins.cadarcos", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "ins.caixas", "para": "sis.manufatura", "tipo": "insumo", "essencial": false, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.celulose", "para": "ins.caixas", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null },
-    { "de": "mat.madeira_pinus", "para": "mat.celulose", "tipo": "insumo", "essencial": true, "confianca": "fato técnico", "valor_usd": null }
+    {
+      "de": "ins.acido_formico",
+      "para": "ins.neutralizantes",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "ins.carbonato_sodio",
+      "para": "ins.neutralizantes",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aromaticos",
+      "para": "ins.neutralizantes",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "rec.magnesita",
+      "para": "ins.basificantes",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.lixadeiras",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.maquinas_acabamento",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.medidoras",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.injetoras_pu",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.maquinas_costura",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.celulose",
+      "para": "ins.palmilha_montagem",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.plasticos",
+      "para": "ins.palmilha_montagem",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.palmilha_antiperfuracao",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.plasticos",
+      "para": "ins.palmilha_antiperfuracao",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.plasticos",
+      "para": "ins.contraforte",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.ilhoses",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.plasticos",
+      "para": "ins.cadarcos",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.celulose",
+      "para": "ins.caixas",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.madeira_pinus",
+      "para": "mat.celulose",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.petroquimicos",
+      "para": "ins.bactericidas",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.descarnadeiras",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.rebaixadeiras",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.secadores_couro",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.isocianatos",
+      "para": "ins.adesivos",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.petroquimicos",
+      "para": "ins.adesivos",
+      "tipo": "insumo",
+      "essencial": false,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    },
+    {
+      "de": "mat.aco",
+      "para": "ins.balancins",
+      "tipo": "insumo",
+      "essencial": true,
+      "confianca": "fato técnico",
+      "valor_usd": null
+    }
+  ],
+  "alterar": [
+    {
+      "id": "ins.tensoativos",
+      "nome": "Tensoativos",
+      "descricao": "Molham e limpam a pele no remolho."
+    },
+    {
+      "id": "ins.maquinas_ribeira",
+      "nome": "Fulões de ribeira e curtimento",
+      "descricao": "Tambores rotativos onde a pele recebe os banhos da ribeira e do curtimento."
+    },
+    {
+      "id": "ins.divisoras",
+      "nome": "Divisoras",
+      "descricao": "Dividem o couro na espessura: a flor, de um lado; a raspa, do outro."
+    },
+    {
+      "id": "ins.secadores",
+      "nome": "Fulões de polipropileno",
+      "descricao": "A planta nova de Nova Andradina trabalha com fulões de polipropileno."
+    },
+    {
+      "id": "ins.linhas_adesivos",
+      "nome": "Linhas e forros",
+      "descricao": "Costura e forro dos cabedais."
+    },
+    {
+      "id": "sis.utilidades",
+      "nome": "Água, energia e efluente",
+      "descricao": "Apoio às etapas: captação de 651.687 m³ de água e descarte de 444.116 m³ de efluente tratado por ano; lodo com uso agrícola."
+    },
+    {
+      "id": "ins.tratamento_efluente",
+      "nome": "Químicos da ETE",
+      "descricao": "Coagulantes, floculantes, ácido e cal que tiram o cromo, o sulfeto e a carga orgânica do efluente."
+    }
+  ],
+  "remover_arestas": [
+    {
+      "de": "mat.isocianatos",
+      "para": "ins.linhas_adesivos",
+      "motivo": "os isocianatos vão para os adesivos, agora um nó à parte"
+    }
   ]
 }

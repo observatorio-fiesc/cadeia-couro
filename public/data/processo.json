@@ -1,0 +1,1253 @@
+{
+  "versao": 1,
+  "nota": "Mapa do processo da Viposa: cada etapa (planta) dividida nas suas operações, na ordem em que acontecem. Cada operação diz o que entra, com o papel de cada entrada, e o que sai além do couro. É a fonte das arestas de insumo para etapa da cadeia: src/dados/cadeia.ts as deriva daqui e confere com cadeia.json. As operações seguem a literatura técnica de curtimento (CETESB 2015, BREF 2013); a receita da Viposa não é pública.",
+  "papeis": {
+    "incorporado": {
+      "nome": "Fica no produto",
+      "descricao": "Entra na composição do couro ou do calçado: o cromo, os recurtentes, o óleo, a tinta, o solado."
+    },
+    "auxiliar": {
+      "nome": "Sai no banho",
+      "descricao": "Age na pele e sai no banho, no efluente: o sal, a cal, o sulfeto, os ácidos, as enzimas."
+    },
+    "maquina": {
+      "nome": "Máquina",
+      "descricao": "Equipamento da operação."
+    },
+    "apoio": {
+      "nome": "Apoio",
+      "descricao": "Água, energia, serviços, transporte e embalagem."
+    },
+    "saber": {
+      "nome": "Pessoas e certificações",
+      "descricao": "Gente que decide, laboratório, licenças e certificados."
+    }
+  },
+  "tipos_saida": {
+    "artigo": {
+      "nome": "Produto vendido",
+      "descricao": "Sai da cadeia da Viposa como artigo."
+    },
+    "coproduto": {
+      "nome": "Coproduto",
+      "descricao": "Sobra da operação com outro uso."
+    },
+    "residuo": {
+      "nome": "Resíduo",
+      "descricao": "Sobra sólida que precisa de destino."
+    },
+    "efluente": {
+      "nome": "Efluente",
+      "descricao": "Banho usado, que segue para o tratamento."
+    }
+  },
+  "etapas": [
+    {
+      "id": "sis.pele",
+      "tipo": "producao",
+      "lugar": "Frigoríficos · MT e MS"
+    },
+    {
+      "id": "sis.ribeira",
+      "tipo": "producao",
+      "lugar": "Várzea Grande · MT"
+    },
+    {
+      "id": "sis.curtimento",
+      "tipo": "producao",
+      "lugar": "Várzea Grande · MT"
+    },
+    {
+      "id": "sis.classificacao",
+      "tipo": "producao",
+      "lugar": "Nova Andradina · MS"
+    },
+    {
+      "id": "sis.recurtimento",
+      "tipo": "producao",
+      "lugar": "Nova Andradina · MS"
+    },
+    {
+      "id": "sis.acabamento",
+      "tipo": "producao",
+      "lugar": "Caçador · SC"
+    },
+    {
+      "id": "sis.manufatura",
+      "tipo": "producao",
+      "lugar": "Caçador · SC"
+    },
+    {
+      "id": "sis.transporte",
+      "tipo": "apoio",
+      "lugar": "MT → MS → SC → portos"
+    },
+    {
+      "id": "sis.utilidades",
+      "tipo": "apoio",
+      "lugar": "MT · MS · SC"
+    }
+  ],
+  "estados": [
+    {
+      "id": "est.pele_verde",
+      "nome": "Pele verde",
+      "descricao": "A pele fresca, sem sal, como sai do frigorífico."
+    },
+    {
+      "id": "est.tripa",
+      "nome": "Pele em tripa",
+      "descricao": "Sem pelo, inchada pela cal, pronta para o descarne."
+    },
+    {
+      "id": "est.piquelada",
+      "nome": "Pele piquelada",
+      "descricao": "Limpa e ácida, pronta para o cromo."
+    },
+    {
+      "id": "est.wet_blue",
+      "nome": "Wet blue",
+      "descricao": "Couro curtido ao cromo, úmido e azulado.",
+      "artigo": "art.wet_blue"
+    },
+    {
+      "id": "est.flor",
+      "nome": "Flor dividida",
+      "descricao": "O lado de cima do wet blue, na espessura certa."
+    },
+    {
+      "id": "est.crust",
+      "nome": "Crust",
+      "descricao": "Couro recurtido, tingido, engraxado e seco, ainda sem acabamento.",
+      "artigo": "art.crust"
+    },
+    {
+      "id": "est.acabado",
+      "nome": "Couro acabado",
+      "descricao": "Pintado, gravado, polido e medido.",
+      "artigo": "art.acabado"
+    },
+    {
+      "id": "est.cabedal",
+      "nome": "Cabedal",
+      "descricao": "A parte de cima do calçado, costurada.",
+      "artigo": "art.cabedais"
+    },
+    {
+      "id": "est.calcado",
+      "nome": "Calçado de segurança",
+      "descricao": "Com solado de PU injetado.",
+      "artigo": "art.bota"
+    }
+  ],
+  "saidas": [
+    {
+      "id": "efl.ribeira",
+      "nome": "Banhos da ribeira",
+      "tipo": "efluente",
+      "destino": "Tratamento de efluente",
+      "descricao": "Sais, amônio, enzimas e carga orgânica.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico",
+      "para": "op.ete"
+    },
+    {
+      "id": "efl.caleiro",
+      "nome": "Banho de caleiro",
+      "tipo": "efluente",
+      "destino": "Tratamento de efluente",
+      "descricao": "Sulfeto e cal: o banho mais carregado da ribeira.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico",
+      "para": "op.ete"
+    },
+    {
+      "id": "res.carnaca",
+      "nome": "Carnaça",
+      "tipo": "coproduto",
+      "destino": "sebo e gelatina",
+      "descricao": "A carne e a gordura tiradas no descarne.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "res.aparas_caleadas",
+      "nome": "Aparas caleadas",
+      "tipo": "coproduto",
+      "destino": "cola e gelatina",
+      "descricao": "As patas e as bordas cortadas no recorte.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "efl.cromo",
+      "nome": "Banho residual de cromo",
+      "tipo": "efluente",
+      "destino": "Tratamento de efluente",
+      "descricao": "O cromo que não se fixou na fibra.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico",
+      "para": "op.ete"
+    },
+    {
+      "id": "sai.wet_blue",
+      "nome": "Wet blue vendido",
+      "tipo": "artigo",
+      "destino": "curtumes e acabadores",
+      "descricao": "Parte do wet blue é vendida depois de classificada.",
+      "fontes": [
+        "exame-2026",
+        "comex-mun"
+      ],
+      "confianca": "fato",
+      "artigo": "art.wet_blue"
+    },
+    {
+      "id": "sai.raspa",
+      "nome": "Raspa",
+      "tipo": "artigo",
+      "destino": "camurça e raspa pigmentada",
+      "descricao": "O lado de baixo do couro, separado na divisão, segue como produto próprio.",
+      "fontes": [
+        "exame-2026",
+        "comex-mun"
+      ],
+      "confianca": "fato",
+      "artigo": "art.raspa"
+    },
+    {
+      "id": "res.serragem",
+      "nome": "Serragem cromada",
+      "tipo": "coproduto",
+      "destino": "placas de fibra, adubo e hidrolisado",
+      "descricao": "As raspas finas do rebaixamento.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "efl.recurtimento",
+      "nome": "Banhos do recurtimento",
+      "tipo": "efluente",
+      "destino": "Tratamento de efluente",
+      "descricao": "Recurtentes, corantes e óleos que não se fixaram.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico",
+      "para": "op.ete"
+    },
+    {
+      "id": "sai.crust",
+      "nome": "Crust vendido",
+      "tipo": "artigo",
+      "destino": "acabadores",
+      "descricao": "Parte do couro sai em crust.",
+      "fontes": [
+        "exame-2026",
+        "comex-mun"
+      ],
+      "confianca": "fato",
+      "artigo": "art.crust"
+    },
+    {
+      "id": "res.po_lixa",
+      "nome": "Pó de lixamento",
+      "tipo": "residuo",
+      "destino": "resíduo sólido do acabamento",
+      "descricao": "O pó da flor lixada.",
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "sai.acabado",
+      "nome": "Couro acabado vendido",
+      "tipo": "artigo",
+      "destino": "automotivo, moda e móveis",
+      "descricao": "O couro acabado que não vira cabedal.",
+      "fontes": [
+        "exame-2026",
+        "comex-mun"
+      ],
+      "confianca": "fato",
+      "artigo": "art.acabado"
+    },
+    {
+      "id": "res.aparas_corte",
+      "nome": "Aparas de corte",
+      "tipo": "residuo",
+      "destino": "uso agrícola, como o lodo",
+      "descricao": "As sobras do couro acabado cortado.",
+      "fontes": [
+        "exame-2026",
+        "rbv"
+      ],
+      "confianca": "fato",
+      "artigo": "art.residuos"
+    },
+    {
+      "id": "sai.cabedal",
+      "nome": "Cabedais vendidos",
+      "tipo": "artigo",
+      "destino": "fabricantes de calçados",
+      "descricao": "Exportados sem sola.",
+      "fontes": [
+        "site-viposa",
+        "exame-2026"
+      ],
+      "confianca": "fato",
+      "artigo": "art.cabedais"
+    },
+    {
+      "id": "sai.calcado",
+      "nome": "Calçados de segurança",
+      "tipo": "artigo",
+      "destino": "empresas e trabalhadores (EPI)",
+      "descricao": "Botas e calçados com Certificado de Aprovação.",
+      "fontes": [
+        "site-viposa",
+        "nr6"
+      ],
+      "confianca": "fato",
+      "artigo": "art.bota"
+    },
+    {
+      "id": "res.lodo",
+      "nome": "Lodo da ETE",
+      "tipo": "coproduto",
+      "destino": "uso agrícola",
+      "descricao": "74,11% dos resíduos da Viposa têm uso agrícola e 9,02% viram fertilizante.",
+      "fontes": [
+        "exame-2026",
+        "rbv"
+      ],
+      "confianca": "fato",
+      "artigo": "art.residuos"
+    },
+    {
+      "id": "efl.tratado",
+      "nome": "Efluente tratado",
+      "tipo": "efluente",
+      "destino": "descarte: 444.116 m³ por ano",
+      "descricao": "O efluente depois do tratamento.",
+      "fontes": [
+        "levantamento-1611"
+      ],
+      "confianca": "fato"
+    }
+  ],
+  "operacoes": [
+    {
+      "id": "op.abate",
+      "etapa": "sis.pele",
+      "nome": "Abate e esfola",
+      "descricao": "No frigorífico, a pele sai do animal. A esfola define os cortes; a pele segue fresca, sem sal, para a ribeira.",
+      "produz": "est.pele_verde",
+      "entradas": [
+        {
+          "no": "ins.bovinos_machos",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.bovinos_femeas",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.abate",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.transporte_gado",
+          "papel": "apoio"
+        },
+        {
+          "no": "cap.rastreabilidade",
+          "papel": "saber"
+        }
+      ],
+      "fontes": [
+        "tec-curtume",
+        "exame-2026"
+      ],
+      "confianca": "fato"
+    },
+    {
+      "id": "op.remolho",
+      "etapa": "sis.ribeira",
+      "nome": "Remolho",
+      "descricao": "Reidrata a pele e tira sangue e sujeira.",
+      "entradas": [
+        {
+          "no": "ins.tensoativos",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.bactericidas",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.carbonato_sodio",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.ribeira"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.caleiro",
+      "etapa": "sis.ribeira",
+      "nome": "Depilação e caleiro",
+      "descricao": "O sulfeto dissolve o pelo; a cal incha a pele e abre a fibra.",
+      "produz": "est.tripa",
+      "entradas": [
+        {
+          "no": "ins.sulfeto_sodio",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.cal",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.caleiro"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.descarne",
+      "etapa": "sis.ribeira",
+      "nome": "Descarne",
+      "descricao": "Tira a carne e a gordura do lado de dentro da pele.",
+      "entradas": [
+        {
+          "no": "ins.descarnadeiras",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "res.carnaca"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.recorte",
+      "etapa": "sis.ribeira",
+      "nome": "Recorte",
+      "descricao": "Corta as patas e as bordas, que não viram couro.",
+      "entradas": [],
+      "saidas": [
+        "res.aparas_caleadas"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.desencalagem",
+      "etapa": "sis.ribeira",
+      "nome": "Desencalagem",
+      "descricao": "Tira a cal da pele.",
+      "entradas": [
+        {
+          "no": "ins.sulfato_amonio",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.ribeira"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.purga",
+      "etapa": "sis.ribeira",
+      "nome": "Purga",
+      "descricao": "Enzimas limpam a fibra e deixam a flor lisa.",
+      "entradas": [
+        {
+          "no": "ins.enzimas",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.ribeira"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.piquel",
+      "etapa": "sis.ribeira",
+      "nome": "Píquel",
+      "descricao": "Sal e ácido preparam a pele para receber o cromo.",
+      "produz": "est.piquelada",
+      "entradas": [
+        {
+          "no": "ins.sal",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.acido_sulfurico",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.acido_formico",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.ribeira"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.curtimento",
+      "etapa": "sis.curtimento",
+      "nome": "Curtimento ao cromo",
+      "descricao": "O cromo se liga ao colágeno: a pele vira couro e não apodrece mais.",
+      "entradas": [
+        {
+          "no": "ins.sulfato_cromo",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.curtentes_sem_metal",
+          "papel": "incorporado",
+          "essencial": false,
+          "nota": "na linha wet white, no lugar do cromo"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.cromo"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.basificacao",
+      "etapa": "sis.curtimento",
+      "nome": "Basificação",
+      "descricao": "Sobe o pH e fixa o cromo na fibra; o fungicida conserva o couro: sai o wet blue.",
+      "produz": "est.wet_blue",
+      "entradas": [
+        {
+          "no": "ins.basificantes",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.fungicidas",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.maquinas_ribeira",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.cromo"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.transp_wetblue",
+      "etapa": "sis.transporte",
+      "nome": "Wet blue: Várzea Grande → Nova Andradina",
+      "descricao": "O wet blue segue de caminhão de MT a MS.",
+      "entradas": [
+        {
+          "no": "ins.diesel",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.frota",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.rodovias",
+          "papel": "apoio",
+          "confianca": "indício"
+        },
+        {
+          "no": "ins.embalagem",
+          "papel": "apoio"
+        }
+      ],
+      "fontes": [
+        "lwg",
+        "exame-2026"
+      ],
+      "confianca": "fato",
+      "leva": "est.wet_blue",
+      "depois": "sis.curtimento"
+    },
+    {
+      "id": "op.transp_crust",
+      "etapa": "sis.transporte",
+      "nome": "Crust: Nova Andradina → Caçador",
+      "descricao": "O crust segue de caminhão de MS a SC.",
+      "entradas": [
+        {
+          "no": "ins.diesel",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.frota",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.rodovias",
+          "papel": "apoio",
+          "confianca": "indício"
+        },
+        {
+          "no": "ins.embalagem",
+          "papel": "apoio"
+        }
+      ],
+      "fontes": [
+        "lwg",
+        "exame-2026"
+      ],
+      "confianca": "fato",
+      "leva": "est.crust",
+      "depois": "sis.recurtimento"
+    },
+    {
+      "id": "op.exportacao",
+      "etapa": "sis.transporte",
+      "nome": "Das plantas aos portos",
+      "descricao": "Os artigos exportados seguem por rodovia até os portos.",
+      "entradas": [
+        {
+          "no": "ins.diesel",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.frota",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.rodovias",
+          "papel": "apoio",
+          "confianca": "indício"
+        },
+        {
+          "no": "ins.portos",
+          "papel": "apoio",
+          "confianca": "indício"
+        },
+        {
+          "no": "ins.embalagem",
+          "papel": "apoio"
+        }
+      ],
+      "fontes": [
+        "lwg",
+        "exame-2026",
+        "comex-mun"
+      ],
+      "confianca": "fato"
+    },
+    {
+      "id": "op.classificacao",
+      "etapa": "sis.classificacao",
+      "nome": "Classificação",
+      "descricao": "Cada couro recebe uma classe pela área útil e pelos defeitos. A classe define o destino de cada pele.",
+      "entradas": [
+        {
+          "no": "cap.classificadores",
+          "papel": "saber"
+        }
+      ],
+      "saidas": [
+        "sai.wet_blue"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.divisao",
+      "etapa": "sis.classificacao",
+      "nome": "Divisão",
+      "descricao": "A divisora separa o couro na espessura: a flor em cima, a raspa embaixo.",
+      "produz": "est.flor",
+      "entradas": [
+        {
+          "no": "ins.divisoras",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "sai.raspa"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.rebaixamento",
+      "etapa": "sis.classificacao",
+      "nome": "Rebaixamento",
+      "descricao": "Iguala a espessura do couro.",
+      "entradas": [
+        {
+          "no": "ins.rebaixadeiras",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "res.serragem"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.neutralizacao",
+      "etapa": "sis.recurtimento",
+      "nome": "Neutralização",
+      "descricao": "Tira o ácido do wet blue antes do recurtimento.",
+      "entradas": [
+        {
+          "no": "ins.neutralizantes",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.secadores",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.recurtimento"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.recurtimento",
+      "etapa": "sis.recurtimento",
+      "nome": "Recurtimento",
+      "descricao": "Dá corpo, maciez e firmeza ao couro.",
+      "entradas": [
+        {
+          "no": "ins.recurtentes_sinteticos",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.taninos_vegetais",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.sulfato_cromo",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.secadores",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.recurtimento"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.tingimento",
+      "etapa": "sis.recurtimento",
+      "nome": "Tingimento",
+      "descricao": "Os corantes dão a cor; o ácido os fixa na fibra.",
+      "entradas": [
+        {
+          "no": "ins.corantes",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.acido_formico",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "ins.secadores",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.recurtimento"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.engraxe",
+      "etapa": "sis.recurtimento",
+      "nome": "Engraxe",
+      "descricao": "Os óleos lubrificam as fibras: o couro fica macio.",
+      "entradas": [
+        {
+          "no": "ins.oleos_engraxe",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.secadores",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "efl.recurtimento"
+      ],
+      "banho": true,
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.secagem",
+      "etapa": "sis.recurtimento",
+      "nome": "Secagem",
+      "descricao": "O couro seca: sai o crust.",
+      "produz": "est.crust",
+      "entradas": [
+        {
+          "no": "ins.secadores_couro",
+          "papel": "maquina"
+        },
+        {
+          "no": "ins.energia_termica",
+          "papel": "apoio"
+        }
+      ],
+      "saidas": [
+        "sai.crust"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.lixamento",
+      "etapa": "sis.acabamento",
+      "nome": "Lixamento",
+      "descricao": "Lixa a flor (nobuck, flor corrigida) ou o carnal (camurça).",
+      "entradas": [
+        {
+          "no": "ins.lixadeiras",
+          "papel": "maquina",
+          "confianca": "indício",
+          "essencial": false
+        }
+      ],
+      "saidas": [
+        "res.po_lixa"
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.fundo",
+      "etapa": "sis.acabamento",
+      "nome": "Fundo",
+      "descricao": "Ligantes de PU e acrílicos preparam a flor.",
+      "entradas": [
+        {
+          "no": "ins.dispersoes_pu",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.maquinas_acabamento",
+          "papel": "maquina"
+        }
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.cor",
+      "etapa": "sis.acabamento",
+      "nome": "Cor",
+      "descricao": "Os pigmentos, na dispersão, cobrem a flor.",
+      "entradas": [
+        {
+          "no": "ins.pigmentos",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.dispersoes_pu",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.maquinas_acabamento",
+          "papel": "maquina"
+        }
+      ],
+      "fontes": [
+        "tec-curtume"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.final",
+      "etapa": "sis.acabamento",
+      "nome": "Acabamento final",
+      "descricao": "Camada de proteção à base de água: PU, ceras, toque, reticulantes.",
+      "entradas": [
+        {
+          "no": "ins.dispersoes_pu",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.auxiliares_acabamento",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.maquinas_acabamento",
+          "papel": "maquina"
+        }
+      ],
+      "fontes": [
+        "tec-curtume",
+        "site-viposa"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.gravacao",
+      "etapa": "sis.acabamento",
+      "nome": "Gravação e polimento",
+      "descricao": "A prensa imprime o desenho na flor e dá brilho.",
+      "entradas": [
+        {
+          "no": "ins.prensas",
+          "papel": "maquina"
+        }
+      ],
+      "fontes": [
+        "tec-curtume",
+        "site-viposa"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.medicao",
+      "etapa": "sis.acabamento",
+      "nome": "Medição e controle",
+      "descricao": "Cada couro é medido, porque é vendido por área; o laboratório confere a cor e os ensaios.",
+      "produz": "est.acabado",
+      "entradas": [
+        {
+          "no": "ins.medidoras",
+          "papel": "maquina"
+        },
+        {
+          "no": "cap.laboratorio",
+          "papel": "saber"
+        }
+      ],
+      "saidas": [
+        "sai.acabado"
+      ],
+      "fontes": [
+        "tec-curtume",
+        "exame-2026"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.corte",
+      "etapa": "sis.manufatura",
+      "nome": "Corte",
+      "descricao": "As peças do cabedal são cortadas no couro acabado.",
+      "entradas": [
+        {
+          "no": "ins.balancins",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "res.aparas_corte"
+      ],
+      "fontes": [
+        "tec-calcado"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.costura",
+      "etapa": "sis.manufatura",
+      "nome": "Costura do cabedal",
+      "descricao": "As peças são costuradas, com o forro: sai o cabedal.",
+      "produz": "est.cabedal",
+      "entradas": [
+        {
+          "no": "ins.linhas_adesivos",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.maquinas_costura",
+          "papel": "maquina"
+        }
+      ],
+      "saidas": [
+        "sai.cabedal"
+      ],
+      "fontes": [
+        "tec-calcado",
+        "site-viposa"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.montagem",
+      "etapa": "sis.manufatura",
+      "nome": "Montagem",
+      "descricao": "O cabedal é montado na forma, sobre a palmilha, com a biqueira e o contraforte.",
+      "entradas": [
+        {
+          "no": "ins.palmilha_montagem",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.contraforte",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.biqueira",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.adesivos",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.palmilha_antiperfuracao",
+          "papel": "incorporado",
+          "confianca": "indício",
+          "essencial": false,
+          "nota": "só nos modelos com essa proteção"
+        },
+        {
+          "no": "ins.ilhoses",
+          "papel": "incorporado",
+          "confianca": "indício",
+          "essencial": false,
+          "nota": "nos modelos de amarrar"
+        },
+        {
+          "no": "ins.cadarcos",
+          "papel": "incorporado",
+          "confianca": "indício",
+          "essencial": false,
+          "nota": "nos modelos de amarrar"
+        }
+      ],
+      "fontes": [
+        "tec-calcado",
+        "iso20345"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.injecao",
+      "etapa": "sis.manufatura",
+      "nome": "Injeção do solado",
+      "descricao": "O solado de PU é injetado direto no cabedal montado; o calçado precisa do Certificado de Aprovação.",
+      "entradas": [
+        {
+          "no": "ins.solado_pu",
+          "papel": "incorporado"
+        },
+        {
+          "no": "ins.injetoras_pu",
+          "papel": "maquina"
+        },
+        {
+          "no": "cap.ca_epi",
+          "papel": "saber"
+        }
+      ],
+      "fontes": [
+        "tec-calcado",
+        "site-viposa",
+        "nr6"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.embalagem",
+      "etapa": "sis.manufatura",
+      "nome": "Embalagem",
+      "descricao": "Cada par vai na sua caixa.",
+      "produz": "est.calcado",
+      "entradas": [
+        {
+          "no": "ins.caixas",
+          "papel": "apoio"
+        }
+      ],
+      "saidas": [
+        "sai.calcado"
+      ],
+      "fontes": [
+        "tec-calcado"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.agua",
+      "etapa": "sis.utilidades",
+      "nome": "Captação e tratamento de água",
+      "descricao": "651.687 m³ de água por ano para os banhos.",
+      "entradas": [
+        {
+          "no": "rec.agua",
+          "papel": "apoio"
+        }
+      ],
+      "fontes": [
+        "levantamento-1611"
+      ],
+      "confianca": "fato"
+    },
+    {
+      "id": "op.vapor",
+      "etapa": "sis.utilidades",
+      "nome": "Vapor e eletricidade",
+      "descricao": "Vapor e água quente para os banhos e a secagem; eletricidade para as máquinas.",
+      "entradas": [
+        {
+          "no": "ins.energia_termica",
+          "papel": "apoio"
+        },
+        {
+          "no": "ins.eletricidade",
+          "papel": "apoio"
+        }
+      ],
+      "fontes": [
+        "tec-curtume",
+        "levantamento-1611"
+      ],
+      "confianca": "fato técnico"
+    },
+    {
+      "id": "op.ete",
+      "etapa": "sis.utilidades",
+      "nome": "Tratamento de efluente",
+      "descricao": "Recebe os banhos usados e tira o cromo, o sulfeto e a carga orgânica antes do descarte.",
+      "entradas": [
+        {
+          "no": "ins.tratamento_efluente",
+          "papel": "auxiliar"
+        },
+        {
+          "no": "cap.licencas_lwg",
+          "papel": "saber"
+        }
+      ],
+      "saidas": [
+        "res.lodo",
+        "efl.tratado"
+      ],
+      "fontes": [
+        "tec-curtume",
+        "levantamento-1611",
+        "lwg"
+      ],
+      "confianca": "fato técnico",
+      "recebe": [
+        "efl.ribeira",
+        "efl.caleiro",
+        "efl.cromo",
+        "efl.recurtimento"
+      ]
+    }
+  ]
+}

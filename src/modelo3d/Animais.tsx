@@ -10,7 +10,7 @@ import { matContorno, matGrade, matPreparo, matTopo } from './materiais'
 import { CAMADAS, COR_DEP, INSUMOS_ANIMAL, ORGAOS, PALETA, regiaoPorId, type Modo } from './receitas'
 import { bloco, folha, type CamadaGeo } from './camadas3d'
 import { BRANCO, LARG, RECUO_ITEM, TAXA_FADE, TAXA_LINHAS, TAXA_LINHAS_SAI, clamp01, expo, flui, focoDe, traco, useFocos, useResolucao, v3 } from './cena'
-import { CASA, MEIO_CAMADA, lugarPilha } from './lugares'
+import { CASA, GIRO_VISTA, MEIO_CAMADA, lugarPilha } from './lugares'
 import type { Anim, Hover, Lente } from './estado'
 
 const SEXOS: Sexo[] = ['boi', 'vaca']
@@ -435,7 +435,8 @@ export function CamadasCena(p: PropsCamadas) {
     [],
   )
   useResolucao(useMemo(() => obj.flatMap((o) => [o.linhas.mat, o.finas.mat]), [obj]))
-  const giro = useMemo(() => new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), Math.PI / 4), [])
+  // a pilha gira 45 graus em relação à vista: a mesma quina de frente para a câmera
+  const giro = useMemo(() => new THREE.Quaternion().setFromAxisAngle(v3(0, 1, 0), Math.PI / 4 + GIRO_VISTA), [])
   const focos = useFocos(useMemo(() => CAMADAS.map((c) => c.id), []))
   // onde a pilha está: segue o animal escolhido, amortecida, então trocar Boi e Vaca a faz deslizar
   const lugar = useMemo(() => ({ pos: v3(), posta: false }), [])

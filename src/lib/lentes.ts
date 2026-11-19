@@ -3,7 +3,7 @@
 
 import type { No } from '../dados/cadeia'
 
-export type Lente = 'estrutura' | 'importado' | 'ormuz' | 'china' | 'confianca'
+export type Lente = 'estrutura' | 'importado' | 'ormuz' | 'china' | 'confianca' | 'ambiente'
 
 export const LENTES: { chave: Lente; rotulo: string }[] = [
   { chave: 'estrutura', rotulo: 'Estrutura' },
@@ -11,6 +11,7 @@ export const LENTES: { chave: Lente; rotulo: string }[] = [
   { chave: 'ormuz', rotulo: 'Ormuz 2026' },
   { chave: 'china', rotulo: 'China' },
   { chave: 'confianca', rotulo: 'Confiança' },
+  { chave: 'ambiente', rotulo: 'Ambiente' },
 ]
 
 export const COR = {

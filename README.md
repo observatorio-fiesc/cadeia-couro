@@ -10,9 +10,9 @@ Painel de análise feito com dados e documentos públicos; não é publicação 
 
 | Aba | Endereço | O que mostra |
 |---|---|---|
-| Modelo 3D | `#bois` | Dois sistemas, escolhidos no título. **Boi e vaca**: tudo sai dos animais: o rúmen e o que entra nele (pasto, ração, adubos); a pele por região, no próprio corpo, com a química da ribeira (MT) ao lado; as camadas do couro ao lado do animal (um toque no vão da pele) e o que cada uma pode virar (MS). **Sapato de segurança**: a bota, peça a peça (SC). Tudo em traço e curvas de nível, sem pintura; só o gráfico de composição tem cor. Cada item abre de onde vem na cadeia. Inclui uma lente de dependência externa |
-| Cone 3D | `#cone` | A cadeia de oferta em cone, com lentes: importado, Ormuz, China e confiança |
-| Cadeia | `#cadeia` | Árvore de dependências de cada elo |
+| Modelo 3D | `#bois` | Dois sistemas, escolhidos no título. **Boi e vaca**: tudo sai dos animais: o rúmen e o que entra nele (pasto, ração, adubos); a pele por região, no próprio corpo, com a química da ribeira (MT) ao lado; as camadas do couro ao lado do animal (um toque no vão da pele) e o que cada uma pode virar (MS). **Sapato de segurança**: a bota, peça a peça (SC). Tudo em traço e curvas de nível, sem pintura; só o gráfico de composição tem cor. Com um item escolhido, "Ver na cadeia →", no próprio rótulo dele, abre o Cone 3D com o elo dele escolhido: a câmera virada para ele, o que depende dele em vermelho até os produtos e o que está acima dele aceso. A câmera não se move pelo mouse: anda só quando algo é escolhido, sempre do mesmo lado da cena (`naVista`, em `src/modelo3d/lugares.ts`). Inclui uma lente de dependência externa |
+| Cone 3D | `#cone` | A rede da cadeia em cone, no padrão da rede da criticidade do painel de referência. Recursos naturais no chão; materiais e insumos em faixas acima, cada elo no setor das etapas que alimenta; no alto, o anel das nove etapas na ordem do processo, com o caminho do couro em conhaque; acima, os seis produtos vendidos e a Viposa no vértice. Tamanho da marca pelo alcance. Lentes como capítulos no alto (Estrutura, Importado, Ormuz 2026, China, Confiança, Ambiente), com o texto de cada uma à esquerda. Na lente Ambiente, os elos em quatro grupos (origem do gado, água e efluente, cromo, floresta e energia), as licenças e o selo LWG em branco, o que cada etapa solta (coprodutos, resíduos e efluentes) fora do anel das etapas, ligado ao destino, e os pontos de atenção pulsando; na coluna da esquerda, botões para destacar só um ou alguns grupos (origem do gado, água e efluente, cromo, floresta e energia, licenças) e tipos de saída (coprodutos, resíduos, efluentes); à direita, os números, os pontos de atenção, o que sai das plantas e as regras que tocam a cadeia (`src/dados/ambiente.ts`, só com fatos da base e as suas fontes). Um clique num elo deixa vermelho, elo a elo, tudo o que depende dele, até os produtos que deixariam de sair; "ver na cadeia", no rótulo dele, abre o elo na cadeia (`src/vistas/ConeElo.tsx`, como a "cadeia de um item" da referência): de que é feito à esquerda, o que o usa à direita (vermelho: não sai sem ele; azul: tem alternativa), no alto as etapas do processo que param e os produtos que deixariam de sair. Cada nome abre aquele elo; Esc volta ao cone |
+| Cadeia | `#cadeia` | A cadeia de produção, como uma árvore. Começa nos produtos vendidos (calçado de segurança, cabedal, couro acabado, crust, wet blue). Cada produto abre em como é feito: as operações, na ordem, com a planta; o que entra, a começar pelo produto anterior, que abre do mesmo jeito (wet blue → pele piquelada → pele em tripa → pele verde → o boi); e o que sobra (coprodutos, resíduos, efluentes), com o destino. Um material abre no que ele é feito. Cor e forma pelo papel de cada entrada e pelo tipo de cada sobra. Uma operação abre o cartão dela; um material, a ficha do elo |
 | Logística no Brasil | `#brasil` | Rotas das plantas até os portos |
 | Insumos no mundo | `#mundo` | Origem das importações de cada insumo |
 | Ormuz 2026 | `#ormuz` | O fechamento do estreito e os insumos expostos |
@@ -37,6 +37,7 @@ No servidor local, a URL também aceita parâmetros que abrem um estado pronto. 
 - `?vista=bois&modo=regiao&regiao=barrigas&sexo=vaca`
 - `?vista=bois&modo=pele&camada=raspa&lente=dependencia`
 - `?vista=cone&lente=ormuz`
+- `?vista=cadeia&abrir=est.wet_blue,est.wet_blue/est.piquelada`
 
 ## Scripts
 
@@ -54,7 +55,8 @@ Outros scripts em `scripts/`:
 
 - `node scripts/capturar-uma.mjs <url> <arquivo.png> [1600x900] [espera-ms]`: uma captura;
 - `node scripts/capturar-estados.mjs <pasta> <espera-ms> nome=consulta ...`: vários estados da aba Modelo 3D num só navegador;
-- `node scripts/testar-forma.ts`: confere a geometria do boi e da vaca (o Node 24 roda TypeScript direto).
+- `node scripts/testar-forma.ts`: confere a geometria do boi e da vaca (o Node 24 roda TypeScript direto);
+- `node scripts/conferir-processo.ts`: confere o mapa do processo contra a cadeia (operações por etapa, arestas novas e retiradas, pendências, insumos soltos); sai com erro se houver pendência.
 
 ## Estrutura
 
@@ -67,13 +69,13 @@ cadeia-couro-viposa/
 ├── public/
 │   └── data/               dados prontos que o painel lê em tempo de execução (JSON)
 │       └── geo/            malhas: UFs (IBGE), rodovias federais (DNIT), países (Natural Earth)
-├── scripts/                capturas, teste de interação e montagem do site
+├── scripts/                capturas, teste de interação, conferência do processo e montagem do site
 └── src/
     ├── main.tsx            ponto de entrada (sem StrictMode: ver o comentário no arquivo)
     ├── App.tsx             abas, controles e painel de fontes
     ├── componentes/        ficha do elo, painéis das lentes e gráficos em SVG
-    ├── dados/              carga e índice dos JSON (cadeia, abate, logística, mercados)
-    ├── lib/                formatação de números, projeções de mapa, layout do cone e lentes
+    ├── dados/              carga e índice dos JSON (cadeia, mapa do processo, abate, logística, mercados)
+    ├── lib/                formatação de números, projeções de mapa e lentes
     ├── estilos/            CSS global e tokens de cor
     ├── modelo3d/           aba Modelo 3D (ver abaixo)
     └── vistas/             uma vista por aba
@@ -104,7 +106,8 @@ Os arquivos de `public/data/` são gerados pelos scripts em Python de `../Painel
 | Arquivo | Conteúdo | Fonte |
 |---|---|---|
 | `cadeia.json` | Grafo da cadeia (nós e arestas) e comércio exterior dos insumos | Documentos públicos listados em `meta.fontes`; Comex Stat |
-| `cadeia-extra.json` | Acréscimos à cadeia ainda fora do gerador: neutralizantes, magnesita, máquinas do acabamento e do calçado, componentes da bota, celulose. Juntado na carga (`src/dados/cadeia.ts`), que refaz os alcances como o gerador (conferido: os 101 nós originais batem). Ao gerar a cadeia de novo, levar estes nós para o gerador e apagar o arquivo | Literatura técnica de curtimento e de calçado; ABNT NBR ISO 20345; NR-6 |
+| `cadeia-extra.json` | Acréscimos à cadeia ainda fora do gerador: nós novos (neutralizantes, magnesita, máquinas da ribeira, do acabamento e do calçado, componentes da bota, celulose, bactericidas, adesivos), nomes corrigidos (`alterar`) e arestas retiradas (`remover_arestas`). Juntado na carga (`src/dados/cadeia.ts`). Ao gerar a cadeia de novo, levar estes acréscimos para o gerador e apagar o arquivo | Literatura técnica de curtimento e de calçado; ABNT NBR ISO 20345; NR-6 |
+| `processo.json` | O mapa do processo: cada etapa dividida em operações, na ordem; em cada operação, o que entra e com que papel, o estado em que o material sai e as saídas (produto vendido, coproduto, resíduo, efluente) com o destino. É a fonte das arestas de insumo para etapa: a carga (`src/dados/processo.ts`) as deriva das operações, mantém a confiança das que já estavam em `cadeia.json`, anota as divergências como pendências e só então refaz os alcances como o gerador (conferido: os 101 nós originais batem). Para pôr um insumo numa etapa, ele entra numa operação aqui | Literatura técnica de curtimento (CETESB, BREF 2013) e de calçado; NR-6; Leather Working Group; levantamento da Viposa |
 | `abate.json` | Abate por categoria, por UF e trimestre | IBGE, tabela 1092 |
 | `entradas.json` | Portos e URFs de entrada dos insumos importados | Comex Stat 2025 |
 | `logistica.json` | Plantas, portos e rotas | OSRM sobre o OpenStreetMap |
