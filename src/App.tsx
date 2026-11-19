@@ -8,17 +8,15 @@ import { Moldura } from './componentes/Moldura'
 import { BotaoFaixa, DocaContext, Menu } from './componentes/Faixa'
 import { Cone } from './vistas/Cone'
 import { VistaProcesso } from './vistas/Processo'
-import { VistaBrasil } from './vistas/Brasil'
 import { VistaModelo3D } from './vistas/Modelo3D'
 import { VistaExterno } from './vistas/Externo'
 import { FONTE_BOTA, FONTE_CAMADAS, FONTE_DEP } from './modelo3d/receitas'
 
-type Vista = 'bois' | 'cone' | 'cadeia' | 'brasil' | 'externo'
+type Vista = 'bois' | 'cone' | 'cadeia' | 'externo'
 const VISTAS: { chave: Vista; rotulo: string }[] = [
   { chave: 'bois', rotulo: 'Modelo 3D' },
   { chave: 'cone', rotulo: 'Cone 3D' },
   { chave: 'cadeia', rotulo: 'Cadeia' },
-  { chave: 'brasil', rotulo: 'Logística no Brasil' },
   { chave: 'externo', rotulo: 'Mercado externo' },
 ]
 // o elo da cadeia com comércio exterior → o insumo da aba Mercado externo (Importações, Origens)
@@ -41,7 +39,7 @@ export function App() {
   return <Painel ctx={ctx} />
 }
 
-// a vista vai no endereço como #nome (#cone, #cadeia, #brasil, #externo): é o único formato que passa pelo link do
+// a vista vai no endereço como #nome (#bois, #cone, #cadeia, #externo): é o único formato que passa pelo link do
 // site; os parâmetros ?lente= e ?elo= continuam valendo no servidor local
 const vistaDoHash = (): Vista | null => {
   const h = window.location.hash.replace('#', '')
@@ -64,7 +62,7 @@ function Painel({ ctx }: { ctx: Contexto }) {
   useEffect(() => {
     const tecla = (e: KeyboardEvent) => {
       if (e.key === 'Escape') setSel(null)
-      // as teclas 1 a 5 levam às vistas, na ordem do menu
+      // as teclas 1 a 4 levam às vistas, na ordem do menu
       if (e.ctrlKey || e.metaKey || e.altKey || e.target instanceof HTMLInputElement) return
       const v = VISTAS[Number(e.key) - 1]
       if (/^[1-9]$/.test(e.key) && v) {
@@ -132,7 +130,6 @@ function Painel({ ctx }: { ctx: Contexto }) {
         />
       )}
       {vista === 'cadeia' && <VistaProcesso ctx={ctx} selecionado={sel} onSelecionar={setSel} />}
-      {vista === 'brasil' && <VistaBrasil ctx={ctx} />}
       {vista === 'externo' && <VistaExterno />}
 
       {fichaAberta && <Ficha cadeia={cadeia} ix={ix} no={noSel!} onSelecionar={setSel} onVerNoMapa={noSel!.comercio && INSUMO_DO_ELO[noSel!.id] ? () => irParaMapa(noSel!.id) : undefined} processo={ctx.processo} ixp={ctx.ixp} compacta={vista === 'cone'} />}
@@ -188,7 +185,6 @@ function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {
         ))}
         <li>{ctx.log.fonte_rotas}</li>
         <li>{ctx.abate.fonte}</li>
-        <li>Malhas: IBGE (UFs), DNIT (rodovias federais), Natural Earth (países)</li>
         <li>Química por etapa (aba Modelo 3D): Comissão Europeia/JRC, BREF Tanning of Hides and Skins (2013), seções 3.3, 3.4 e 3.9; o desenho usa um valor dentro de cada faixa, não a receita da Viposa</li>
         <li>Regiões da pele (aba Modelo 3D): Leather Naturally (grupão grosso e de fibra densa; barriga mais fina e frouxa); Horween Leather (paleta enrugada; barriga da vaca parida mais frouxa); BREF 2013, seções 2.1.2, 2.4.3 e 3.5.2 (recorte das patas, enchimento das partes frouxas, destino das aparas)</li>
         <li>{FONTE_CAMADAS}</li>
