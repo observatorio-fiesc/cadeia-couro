@@ -1,0 +1,915 @@
+/* aba Mercado externo: o mapa-múndi do Centro de comando na paleta do couro, com a gramática dos Cenários
+   estratégicos do painel-comandante (linha do tempo no alto, folha à esquerda, infográfico sutil à direita);
+   texto direto sobre o mapa, sem caixa */
+
+.externo {
+  position: absolute;
+  inset: 0;
+  /* a luz do papel, como no atlas: uma elipse larga, mais clara no meio, escurecendo nas bordas */
+  background: radial-gradient(ellipse 88% 105% at 52% 46%, #2b231b 0%, #1d1814 46%, #0e0b09 100%);
+}
+.ext-mapa {
+  position: absolute;
+  inset: 0;
+}
+/* nas passadas que são figura, o mapa recua atrás de um véu */
+.ext-veu {
+  position: absolute;
+  inset: 0;
+  z-index: 12;
+  background: radial-gradient(ellipse 80% 90% at 60% 50%, rgba(20, 16, 12, 0.72), rgba(14, 11, 9, 0.9));
+  opacity: 0;
+  transition: opacity 0.9s ease;
+  pointer-events: none;
+}
+.externo.apagado .ext-veu {
+  opacity: 1;
+}
+
+/* ---------- a linha do tempo, no alto: ▶, e cada análise com as suas passadas ---------- */
+
+.ext-tempo {
+  position: absolute;
+  z-index: 18;
+  top: calc(var(--margem) + 30px);
+  left: 50%;
+  transform: translateX(-50%);
+  display: flex;
+  align-items: flex-end;
+  gap: 16px;
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 3px var(--halo);
+  animation: ext-sobe 0.5s ease-out both;
+}
+.ext-tocar {
+  display: grid;
+  padding: 0;
+  place-items: center;
+  width: 21px;
+  height: 21px;
+  margin-bottom: 9px;
+  border: 1px solid var(--regua);
+  background: rgba(20, 17, 13, 0.5);
+  color: var(--traco-2);
+  transition:
+    color 0.2s,
+    border-color 0.2s;
+}
+.ext-tocar svg {
+  fill: currentColor;
+}
+.ext-tocar:hover,
+.ext-tocar.ligado {
+  color: var(--realce);
+  border-color: var(--realce);
+}
+.ext-tempo-grupo {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 6px;
+}
+.ext-tempo-ticks {
+  display: flex;
+  gap: 5px;
+  height: 16px;
+  align-items: flex-end;
+}
+.ext-tick {
+  position: relative;
+  width: 7px;
+  height: 16px;
+  padding: 0;
+  display: flex;
+  align-items: flex-end;
+  justify-content: center;
+}
+.ext-tick i {
+  display: block;
+  flex: none;
+  width: 1px;
+  height: 9px;
+  background: rgba(234, 223, 203, 0.62);
+  transition:
+    height 0.25s,
+    background 0.25s;
+}
+.ext-tick:hover i {
+  height: 11px;
+  background: var(--realce);
+}
+.ext-tick.passado i {
+  background: rgba(234, 223, 203, 0.85);
+}
+.ext-tick.ativo i {
+  height: 16px;
+  background: var(--vermelho);
+}
+.ext-tick-nome {
+  position: absolute;
+  bottom: calc(100% + 10px);
+  left: 50%;
+  transform: translateX(-50%);
+  white-space: nowrap;
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco);
+  animation: ext-sobe 0.4s ease-out both;
+}
+.ext-tempo-nome {
+  font-size: 9.5px;
+  letter-spacing: 0.04em;
+  white-space: nowrap;
+  color: var(--traco-3);
+  transition: color 0.25s;
+}
+.ext-tempo-grupo.ativo .ext-tempo-nome {
+  color: var(--traco);
+  font-weight: 600;
+}
+
+/* ---------- a folha da passada, à esquerda: um número e uma linha ---------- */
+
+.ext-folha {
+  position: absolute;
+  z-index: 15;
+  top: 104px;
+  left: calc(var(--margem) + 8px);
+  width: min(360px, 27vw);
+  max-height: calc(100% - 104px - 120px);
+  isolation: isolate;
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 3px var(--halo);
+}
+/* atrás da coluna, um desfoque com as bordas em gradiente: o mapa continua visível e o texto se lê */
+.ext-folha::before {
+  content: '';
+  position: absolute;
+  z-index: -1;
+  inset: -22px -60px -22px -30px;
+  background: rgba(20, 17, 13, 0.34);
+  backdrop-filter: blur(5px);
+  -webkit-mask-image: linear-gradient(90deg, #000 68%, transparent), linear-gradient(180deg, transparent, #000 8%, #000 88%, transparent);
+  -webkit-mask-composite: source-in;
+  mask-image: linear-gradient(90deg, #000 68%, transparent), linear-gradient(180deg, transparent, #000 8%, #000 88%, transparent);
+  mask-composite: intersect;
+  pointer-events: none;
+}
+.ext-cabeca {
+  animation: ext-sobe 0.6s cubic-bezier(0.2, 0.7, 0.2, 1) 0.3s both;
+}
+.ext-num {
+  display: block;
+  font-family: var(--cond);
+  font-weight: 200;
+  font-size: 74px;
+  line-height: 0.95;
+  letter-spacing: -0.01em;
+  color: var(--traco);
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+.ext-num small {
+  margin-left: 0.08em;
+  font-size: 0.36em;
+  font-weight: 300;
+  letter-spacing: 0.02em;
+  color: var(--traco-2);
+}
+.ext-palavra {
+  display: block;
+  margin-top: 14px;
+  max-width: 330px;
+  font-size: 10.5px;
+  line-height: 1.6;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco-2);
+}
+.ext-proximo {
+  margin-top: 26px;
+  animation: ext-sobe 0.5s ease-out 2.2s both;
+}
+.ext-proximo button {
+  display: inline-flex;
+  gap: 12px;
+  font-size: 12px;
+  color: var(--traco);
+}
+.ext-proximo button span {
+  color: var(--vermelho);
+  transition: transform 0.2s;
+}
+.ext-proximo button:hover {
+  color: var(--realce);
+}
+.ext-proximo button:hover span {
+  transform: translateX(3px);
+}
+@keyframes ext-sobe {
+  from {
+    opacity: 0;
+    transform: translateY(5px);
+  }
+}
+.ext-tempo,
+.ext-sentido-sel {
+  animation-name: ext-entra;
+}
+@keyframes ext-entra {
+  from {
+    opacity: 0;
+  }
+}
+
+/* ---------- o infográfico, acima da faixa de controles: colunas de riscos, quase transparentes ---------- */
+
+.ext-info {
+  position: absolute;
+  z-index: 15;
+  left: calc(var(--margem) + 40px);
+  bottom: calc(var(--margem) + 58px);
+  width: min(330px, 26vw);
+  margin: 0;
+  pointer-events: none;
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 3px var(--halo);
+  animation: ext-sobe 0.6s ease-out 0.5s both;
+}
+.ext-info figcaption {
+  margin-bottom: 22px;
+  font-size: 10px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-2);
+}
+.ext-info-plot {
+  position: relative;
+  display: flex;
+  gap: 18px;
+  height: 112px;
+  border-bottom: 1px solid var(--regua);
+}
+.ext-info.com-zero .ext-info-plot {
+  height: 150px;
+  border-bottom: none;
+}
+.ext-info-regua,
+.ext-info-zero {
+  position: absolute;
+  left: 0;
+  right: 0;
+  border-top: 1px dashed var(--regua-2);
+}
+.ext-info-zero {
+  border-top: 1px solid var(--regua);
+}
+.ext-info-regua span {
+  position: absolute;
+  left: -30px;
+  top: -6px;
+  font-family: var(--mono);
+  font-size: 8.5px;
+  color: var(--traco-3);
+}
+.ext-info-col {
+  position: relative;
+  flex: 1;
+}
+.ext-info-barra {
+  position: absolute;
+  left: 16%;
+  right: 16%;
+  height: 0;
+  color: var(--couro);
+  background: repeating-linear-gradient(90deg, currentColor 0 1px, transparent 1px 4px);
+  border-top: 1px solid currentColor;
+  opacity: 0.85;
+  transition: height 1s cubic-bezier(0.2, 0.7, 0.2, 1);
+}
+.ext-info-barra.desce {
+  border-top: none;
+  border-bottom: 1px solid currentColor;
+}
+.ext-info-barra b {
+  position: absolute;
+  bottom: 100%;
+  left: 50%;
+  transform: translateX(-50%);
+  margin-bottom: 5px;
+  white-space: nowrap;
+  font-family: var(--cond);
+  font-weight: 300;
+  font-size: 17px;
+  color: var(--traco);
+}
+.ext-info-barra.desce b {
+  bottom: auto;
+  top: 100%;
+  margin: 5px 0 0;
+}
+.tom-couro {
+  --cor-tom: var(--couro);
+}
+.ext-info-barra.tom-couro {
+  color: var(--couro);
+}
+.ext-info-barra.tom-perda {
+  color: var(--vermelho);
+}
+.ext-info-barra.tom-ganho {
+  color: #79b487;
+}
+.ext-info-barra.tom-ambar {
+  color: var(--ambar);
+}
+.ext-info-barra.tom-tinta {
+  color: rgba(234, 223, 203, 0.85);
+}
+.ext-info-nomes {
+  display: flex;
+  gap: 18px;
+  margin-top: 8px;
+}
+.ext-info.com-zero .ext-info-nomes {
+  margin-top: 30px;
+}
+.ext-info-nomes span {
+  flex: 1;
+  text-align: center;
+  font-size: 10px;
+  line-height: 1.35;
+  color: var(--traco-2);
+}
+.ext-info-nomes i {
+  display: block;
+  margin-top: 3px;
+  font-style: normal;
+  font-size: 9px;
+  color: var(--traco-3);
+}
+
+/* a corrente de um choque, no lugar do infográfico, também acima da faixa */
+.ext-lado {
+  position: absolute;
+  z-index: 15;
+  left: calc(var(--margem) + 12px);
+  bottom: calc(var(--margem) + 58px);
+  width: auto;
+  pointer-events: none;
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 3px var(--halo);
+}
+.ext-corrente {
+  display: flex;
+  align-items: flex-start;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+.ext-corrente li {
+  position: relative;
+  width: 150px;
+  padding: 0 30px 0 0;
+  animation: ext-sobe 0.6s ease-out both;
+}
+.ext-corrente li:not(:last-child)::after {
+  content: '→';
+  position: absolute;
+  right: 9px;
+  top: 6px;
+  font-size: 14px;
+  color: var(--traco-3);
+}
+.ext-corrente li.tom-perda {
+  --cor: #f0907e;
+}
+.ext-corrente li.tom-ambar {
+  --cor: var(--ambar);
+}
+.ext-corrente li.tom-couro {
+  --cor: var(--couro);
+}
+.ext-corrente b {
+  display: block;
+  font-family: var(--cond);
+  font-weight: 200;
+  font-size: 30px;
+  line-height: 1.05;
+  color: var(--cor, var(--traco));
+}
+.ext-corrente span {
+  display: block;
+  margin-top: 4px;
+  font-size: 9.5px;
+  line-height: 1.45;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--traco-2);
+}
+.ext-corrente i {
+  display: block;
+  margin-top: 2px;
+  font-style: normal;
+  font-size: 9.5px;
+  color: var(--traco-3);
+}
+
+/* ---------- a figura grande, sobre o mapa apagado ---------- */
+
+.ext-figura {
+  position: absolute;
+  z-index: 14;
+  top: 120px;
+  bottom: 110px;
+  left: calc(min(380px, 26vw) + 40px);
+  right: calc(var(--margem) + 40px);
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+.ext-figura svg {
+  max-width: 100%;
+  max-height: 100%;
+  height: auto;
+  overflow: visible;
+}
+
+/* ---------- o ano do vídeo, à direita, com o andamento ---------- */
+
+.ext-ano-video {
+  position: absolute;
+  z-index: 15;
+  right: calc(var(--margem) + 40px);
+  top: 50%;
+  width: 116px;
+  text-align: right;
+  pointer-events: none;
+  text-shadow:
+    0 0 10px var(--halo),
+    0 0 3px var(--halo);
+}
+.ext-ano-video b {
+  display: block;
+  font-family: var(--cond);
+  font-weight: 200;
+  font-size: 50px;
+  line-height: 1;
+  color: rgba(234, 223, 203, 0.62);
+  font-variant-numeric: tabular-nums;
+  animation: ext-entra 0.35s ease-out both;
+}
+.ext-ano-video i {
+  display: block;
+  height: 1px;
+  margin: 8px 0 0 auto;
+  background: var(--couro);
+  transition: width 1s linear;
+}
+
+/* ---------- Exportações ou Importações, embaixo no meio ---------- */
+
+.ext-sentido-sel {
+  position: absolute;
+  z-index: 19;
+  left: 50%;
+  bottom: calc(var(--margem) + 10px);
+  transform: translateX(-50%);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  animation: ext-entra 0.5s ease-out 0.3s both;
+}
+.ext-sentido {
+  position: relative;
+  display: inline-flex;
+  align-items: baseline;
+  gap: 10px;
+  padding: 4px 2px 7px;
+  font-size: 11px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  white-space: nowrap;
+  color: var(--traco);
+  text-shadow:
+    0 0 10px var(--halo),
+    0 0 3px var(--halo);
+}
+.ext-sentido::after {
+  content: '';
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 1px;
+  background: linear-gradient(90deg, transparent, currentColor 22%, currentColor 78%, transparent);
+  opacity: 0.7;
+}
+.ext-sentido-seta {
+  transition: transform 0.2s;
+}
+.ext-sentido:hover {
+  color: var(--realce);
+}
+.ext-sentido:hover .ext-sentido-seta,
+.ext-sentido-sel.aberto .ext-sentido-seta {
+  transform: translateX(3px);
+}
+.ext-sentido-lista {
+  margin: 0 0 10px;
+  padding: 4px 0;
+  list-style: none;
+  border: 1px solid var(--regua);
+  background: var(--painel-menu);
+  backdrop-filter: blur(4px);
+  animation: menu-sobe 0.18s ease-out both;
+}
+.ext-sentido-lista button {
+  display: block;
+  width: 100%;
+  padding: 7px 22px;
+  font-size: 10.5px;
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--traco-2);
+  text-align: left;
+}
+.ext-sentido-lista button:hover {
+  color: var(--realce);
+}
+.ext-sentido-lista button.ativo {
+  color: var(--traco);
+  box-shadow: inset 2px 0 0 var(--couro);
+}
+
+/* ---------- o quadro dos produtos, no canto inferior direito ---------- */
+
+.ext-quadro {
+  right: calc(var(--margem) + 6px);
+  bottom: var(--margem);
+  width: 248px;
+  max-height: calc(100% - 120px);
+  overflow: auto;
+  transition:
+    transform 0.35s ease,
+    opacity 0.3s ease;
+}
+.ext-quadro.recolhido {
+  transform: translateX(calc(100% + var(--margem) + 12px));
+  opacity: 0;
+  pointer-events: none;
+}
+.ext-produtos {
+  margin: 0;
+  padding: 4px 0 6px;
+  list-style: none;
+  transition: opacity 0.3s;
+}
+.ext-quadro.inativo .ext-produtos {
+  opacity: 0.38;
+}
+.ext-produtos button {
+  display: block;
+  width: 100%;
+  padding: 5px 12px 5px 14px;
+  font-size: 11.5px;
+  text-align: left;
+  color: var(--traco-2);
+  transition: color 0.15s;
+}
+.ext-produtos button:hover {
+  color: var(--realce);
+}
+.ext-produtos button.ativo {
+  color: var(--traco);
+  box-shadow: inset 2px 0 0 var(--couro);
+}
+.ext-produtos-grupo {
+  padding: 9px 14px 3px;
+  font-size: 9px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: var(--traco-3);
+}
+.ext-produtos-nota {
+  margin: 0;
+  padding: 9px 14px 10px;
+  font-size: 9.5px;
+  color: var(--traco-3);
+}
+.painel-aba.direita {
+  right: calc(var(--margem) + 6px);
+  bottom: var(--margem);
+}
+
+/* ---------- escritos sobre o mapa ---------- */
+
+.ext-rotulo {
+  position: absolute;
+  display: block;
+  white-space: nowrap;
+  font-family: var(--cond);
+  font-size: 10.5px;
+  letter-spacing: 0.24em;
+  text-transform: uppercase;
+  color: rgba(234, 223, 203, 0.48);
+  text-shadow:
+    0 0 10px var(--halo),
+    0 0 4px var(--halo),
+    0 0 2px var(--halo);
+  user-select: none;
+  animation: ext-rotulo-in 0.8s ease-out 0.5s both;
+}
+.ext-rotulo.forte {
+  color: var(--traco);
+}
+.ext-rotulo.tom-perda {
+  color: #f0907e;
+}
+.ext-rotulo.tom-ganho {
+  color: #9fd1a9;
+}
+.ext-rotulo.agua {
+  letter-spacing: 0.34em;
+  color: rgba(234, 223, 203, 0.34);
+}
+.ext-rotulo.lado-dir {
+  transform: translate(10px, -50%);
+}
+.ext-rotulo.lado-esq {
+  transform: translate(calc(-100% - 10px), -50%);
+}
+.ext-rotulo.lado-cima {
+  transform: translate(-50%, calc(-100% - 8px));
+}
+.ext-rotulo.lado-baixo {
+  transform: translate(-50%, 8px);
+}
+@keyframes ext-rotulo-in {
+  from {
+    opacity: 0;
+    filter: blur(2px);
+  }
+}
+.ext-cidade {
+  display: block;
+  white-space: nowrap;
+  transform: translate(6px, -50%);
+  font-size: 9px;
+  letter-spacing: 0.04em;
+  color: rgba(234, 223, 203, 0.5);
+  text-shadow:
+    0 0 6px var(--halo),
+    0 0 2px var(--halo);
+  animation: ext-entra 0.8s ease-out both;
+}
+
+/* o nome e o valor de uma peça, no alto dela */
+.ext-peca {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  white-space: nowrap;
+  line-height: 1.15;
+  text-shadow:
+    0 0 10px var(--halo),
+    0 0 4px var(--halo),
+    0 0 2px var(--halo);
+  animation: ext-entra 0.6s ease-out 0.4s both;
+}
+.ext-peca.lado-cima {
+  transform: translate(-50%, calc(-100% - 6px));
+}
+.ext-peca.lado-dir {
+  align-items: flex-start;
+  transform: translate(12px, -30%);
+}
+.ext-peca.lado-esq {
+  align-items: flex-end;
+  transform: translate(calc(-100% - 12px), -30%);
+}
+.ext-peca em {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  color: var(--traco);
+}
+.ext-peca b {
+  font-family: var(--cond);
+  font-weight: 400;
+  font-size: 14px;
+  color: var(--traco);
+}
+.ext-peca.tom-couro b {
+  color: #e8a774;
+}
+.ext-peca.tom-perda em,
+.ext-peca.tom-perda b {
+  color: #f0907e;
+}
+.ext-peca.tom-ganho b {
+  color: #9fd1a9;
+}
+.ext-peca.tom-ambar b {
+  color: var(--ambar);
+}
+
+/* um gargalo: o nome em caixa alta e a parte que passa por ele */
+.ext-gargalo {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  white-space: nowrap;
+  transform: translate(14px, -50%);
+  text-shadow:
+    0 0 10px var(--halo),
+    0 0 4px var(--halo),
+    0 0 2px var(--halo);
+  animation: ext-entra 0.6s ease-out 0.8s both;
+}
+.ext-gargalo em {
+  font-style: normal;
+  font-size: 9.5px;
+  letter-spacing: 0.22em;
+  text-transform: uppercase;
+  color: var(--traco);
+}
+.ext-gargalo b {
+  font-family: var(--cond);
+  font-weight: 300;
+  font-size: 16px;
+  color: #e8a774;
+}
+.ext-gargalo.fechado em {
+  color: var(--vermelho);
+}
+
+/* a treliça dos preços */
+.ext-trelica-marca,
+.ext-trelica-ano,
+.ext-trelica-nome {
+  display: block;
+  white-space: nowrap;
+  font-family: var(--mono);
+  text-shadow:
+    0 0 8px var(--halo),
+    0 0 3px var(--halo);
+  animation: ext-entra 0.6s ease-out both;
+}
+.ext-trelica-marca {
+  font-size: 9.5px;
+  color: var(--traco-2);
+}
+.ext-trelica-ano {
+  font-size: 9px;
+  color: var(--traco-3);
+}
+.ext-trelica-nome {
+  transform: translate(10px, -50%);
+  font-size: 10px;
+  color: var(--traco);
+}
+.ext-trelica-nome.tom-couro {
+  color: #e8a774;
+}
+.ext-trelica-nome.tom-perda {
+  color: #f0907e;
+}
+.ext-trelica-nome.tom-ganho {
+  color: #9fd1a9;
+}
+
+.ext-dica {
+  position: absolute;
+  z-index: 25;
+  pointer-events: none;
+  padding: 7px 10px;
+  max-width: 320px;
+  background: var(--painel-menu);
+  border: 1px solid var(--regua);
+  font-size: 11px;
+  line-height: 1.5;
+  color: var(--traco-2);
+}
+.ext-dica-nome {
+  font-family: var(--cond);
+  font-size: 13px;
+  letter-spacing: 0.04em;
+  color: var(--traco);
+}
+
+/* ---------- tela estreita: a folha em cima, o mapa no meio, o sentido embaixo ---------- */
+
+@media (max-width: 900px) {
+  .ext-tempo {
+    top: calc(var(--margem) + 8px);
+    max-width: calc(100% - 32px);
+    overflow-x: auto;
+    gap: 10px;
+    transform: translateX(-50%) scale(0.9);
+  }
+  .ext-folha {
+    top: 82px;
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: 170px;
+  }
+  .ext-num {
+    font-size: 48px;
+  }
+  .ext-info,
+  .ext-lado,
+  .ext-ano-video {
+    display: none;
+  }
+  .ext-figura {
+    left: 16px;
+    right: 16px;
+    top: 260px;
+  }
+  .ext-quadro {
+    left: 16px;
+    right: 16px;
+    width: auto;
+    max-height: 40%;
+  }
+  .ext-sentido-sel {
+    bottom: 76px;
+  }
+}
+
+/* nas faixas de variação (luxo por região), o rótulo é um intervalo: letra menor para caber na coluna */
+.ext-info.com-zero .ext-info-barra b {
+  font-size: 12.5px;
+  letter-spacing: -0.01em;
+}
+
+/* a linha de um processo (o curtume, o boi): as etapas numa linha, o que entra de fora pendurado em cada uma */
+.ext-fig-processo text {
+  font-family: var(--mono);
+}
+.ext-fig-processo .trilho {
+  stroke: rgba(234, 223, 203, 0.45);
+  stroke-width: 1;
+}
+.ext-fig-processo .seta {
+  fill: none;
+  stroke: rgba(234, 223, 203, 0.55);
+}
+.ext-fig-processo .pele {
+  fill: var(--couro);
+  filter: drop-shadow(0 0 5px var(--couro));
+}
+.ext-fig-processo .estacao,
+.ext-fig-processo .insumo,
+.ext-fig-processo .faixa {
+  animation: ext-entra 0.6s ease-out both;
+}
+.ext-fig-processo .nome {
+  font-size: 10.5px;
+  letter-spacing: 0.2em;
+  text-transform: uppercase;
+  fill: var(--traco);
+}
+.ext-fig-processo .no {
+  fill: #1d1814;
+  stroke: var(--traco);
+  stroke-width: 1.2;
+}
+.ext-fig-processo .no.entra {
+  fill: var(--couro);
+  stroke: var(--couro);
+}
+.ext-fig-processo .desce {
+  stroke: rgba(234, 223, 203, 0.3);
+  stroke-dasharray: 2 3;
+}
+.ext-fig-processo .nota {
+  font-size: 9.5px;
+  fill: var(--traco-2);
+}
+.ext-fig-processo .insumo-nome {
+  font-size: 11px;
+  fill: var(--traco);
+}
+.ext-fig-processo .barra {
+  fill: var(--couro);
+}
+.ext-fig-processo .barra.golfo {
+  fill: var(--vermelho);
+}
+.ext-fig-processo .insumo-valor {
+  font-size: 9.5px;
+  fill: var(--traco-2);
+}
+.ext-fig-processo .faixa path {
+  fill: none;
+  stroke: rgba(234, 223, 203, 0.4);
+}
