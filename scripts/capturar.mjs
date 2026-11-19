@@ -29,7 +29,7 @@ const todas = [
   ['externo-origens', '?vista=externo&sentido=imp&analise=origens&passo=0&produto=cromo'],
   ['externo-preco-imp', '?vista=externo&sentido=imp&analise=precificacao&passo=0&produto=cromo'],
 ]
-// quinto argumento opcional: nomes separados por vírgula (ex.: estrutura,ormuz)
+// quinto argumento opcional: nomes separados por vírgula (ex.: cone,externo)
 const vistas = soLista ? todas.filter(([n]) => soLista.split(',').includes(n)) : todas
 
 mkdirSync(saida, { recursive: true })
