@@ -408,82 +408,6 @@ button {
   font-size: 11px;
 }
 
-/* barras das lentes: contorno = 2025, cheia = 2026 */
-.legenda-barras {
-  display: flex;
-  gap: 16px;
-  font-size: 10.5px;
-  color: var(--traco-2);
-  margin: 10px 0 12px;
-}
-.legenda-barras i {
-  display: inline-block;
-  width: 18px;
-  height: 7px;
-  margin-right: 5px;
-  vertical-align: middle;
-}
-.legenda-barras .oma {
-  color: var(--traco-3);
-}
-.barra-item {
-  display: block;
-  width: 100%;
-  text-align: left;
-  padding: 7px 0 8px;
-  border-bottom: 1px dashed var(--traco-4);
-}
-.barra-item:hover .barra-titulo span {
-  color: var(--conhaque);
-}
-.barra-titulo {
-  display: flex;
-  justify-content: space-between;
-  font-size: 12px;
-  margin-bottom: 5px;
-}
-.barra-titulo em {
-  font-style: normal;
-  font-size: 11px;
-  color: var(--traco-2);
-}
-.barra-trilho {
-  position: relative;
-  height: 7px;
-  margin: 2px 0;
-}
-.barra-trilho i {
-  position: absolute;
-  left: 0;
-  top: 0;
-  height: 7px;
-}
-.b25 {
-  border: 1px solid var(--vermelho);
-}
-.b26 {
-  background: var(--vermelho);
-}
-.b25-oma {
-  border: 1px dashed var(--traco-2);
-  border-right: 0;
-}
-.b26-oma {
-  background: repeating-linear-gradient(90deg, var(--traco-2) 0 2px, transparent 2px 4px);
-}
-.b25.ambar {
-  border-color: var(--ambar);
-}
-.b26.ambar {
-  background: var(--ambar);
-}
-.barra-valores {
-  font-size: 11px;
-  color: var(--traco-2);
-  margin-top: 3px;
-  font-variant-numeric: tabular-nums;
-}
-
 /* ---------- moldura de prancha (como a do visualizador do submarino) ---------- */
 
 .moldura {
@@ -1944,7 +1868,7 @@ button:focus-visible {
   pointer-events: none;
   font-size: 11.5px;
   line-height: 1.55;
-  color: var(--traco-2);
+  color: rgba(234, 223, 203, 0.94);
   text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
   animation: fade-in 0.5s cubic-bezier(0.2, 0.7, 0.2, 1) both;
 }
@@ -1969,7 +1893,7 @@ button:focus-visible {
 .historia .historia-dica {
   margin-top: 16px;
   font-size: 10.5px;
-  color: var(--traco-3);
+  color: rgba(234, 223, 203, 0.82);
 }
 
 /* o nome de cada altura, junto à silhueta esquerda */
@@ -1978,11 +1902,11 @@ button:focus-visible {
   transform: translate(-100%, -50%);
   padding-right: 8px;
   white-space: nowrap;
-  font-size: 8.5px;
+  font-size: 9.5px;
   letter-spacing: 0.18em;
   text-transform: uppercase;
-  color: var(--traco-3);
-  border-right: 1px solid var(--regua);
+  color: rgba(234, 223, 203, 0.85);
+  border-right: 1px solid var(--traco-2);
   text-shadow: 0 0 6px var(--halo), 0 0 3px var(--halo);
   animation: fade-in 0.8s ease-out both;
 }
@@ -1993,11 +1917,11 @@ button:focus-visible {
   align-items: baseline;
   transform: translate(12px, -50%);
   white-space: nowrap;
-  font-size: 9.5px;
+  font-size: 10.5px;
   letter-spacing: 0.04em;
-  color: var(--traco-2);
+  color: var(--traco);
   cursor: pointer;
-  text-shadow: 0 0 6px var(--halo), 0 0 2px var(--halo);
+  text-shadow: 0 0 8px var(--halo), 0 0 3px var(--halo), 0 0 1px var(--halo);
   animation: fade-in 0.5s ease-out both;
 }
 .cone-rotulo:hover {
@@ -2047,10 +1971,10 @@ button:focus-visible {
   max-width: 300px;
   white-space: normal;
   font-style: normal;
-  font-size: 9px;
+  font-size: 9.5px;
   letter-spacing: 0.02em;
   text-transform: none;
-  color: var(--traco-2);
+  color: rgba(234, 223, 203, 0.92);
 }
 .cone-rotulo.depende b {
   color: #f08a76;
@@ -2086,82 +2010,13 @@ button:focus-visible {
   transform: translate(calc(-100% - 26px), -50%);
 }
 
-/* ---------- lente Ambiente do cone: o painel da direita ---------- */
-.numeros-ambiente {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 14px 18px;
-  margin: 16px 0 6px;
-}
-.numeros-ambiente div {
-  display: flex;
-  flex-direction: column;
-  gap: 3px;
-  padding-top: 8px;
-  border-top: 1px solid var(--regua-2);
-}
-.numeros-ambiente b {
-  font-family: var(--cond);
-  font-size: 26px;
-  font-weight: 200;
-  letter-spacing: -0.02em;
-  color: var(--traco);
-  font-variant-numeric: tabular-nums;
-}
-.numeros-ambiente span {
-  font-size: 10.5px;
-  line-height: 1.4;
-  color: var(--traco-2);
-}
-.numeros-ambiente .alerta b {
-  color: var(--vermelho);
-}
-.painel-ambiente .atencao {
-  display: grid;
-  grid-template-columns: 22px 1fr;
-  gap: 4px;
-  width: 100%;
-  padding: 8px 0;
-  font: inherit;
-  font-size: 11px;
-  line-height: 1.45;
-  text-align: left;
-  color: var(--traco-2);
-  border-bottom: 1px dashed var(--regua-2);
-  cursor: pointer;
-}
-.painel-ambiente .atencao em {
-  font-style: normal;
-  width: 16px;
-  height: 16px;
-  display: grid;
-  place-items: center;
-  font-size: 9px;
-  border: 1px solid var(--vermelho);
-  border-radius: 50%;
-  color: var(--traco);
-}
-.painel-ambiente .atencao strong {
-  display: block;
-  font-weight: 500;
-  font-size: 12px;
-  color: var(--traco);
-  margin-bottom: 2px;
-}
-.painel-ambiente .atencao:hover strong {
-  color: var(--conhaque);
-}
-.painel-ambiente .regra .nota {
-  margin: 2px 0 8px;
-}
-/* o que sai das etapas, no cone: o destino em tinta, sem número */
 .cone-rotulo.saida {
-  color: var(--traco-2);
+  color: var(--traco);
 }
 .cone-rotulo.saida b {
   font-family: var(--mono);
-  font-size: 9px;
-  color: var(--traco-3);
+  font-size: 9.5px;
+  color: rgba(234, 223, 203, 0.82);
 }
 /* as lentes começam onde começa a área livre (depois da coluna do texto), para não passar sob a ficha */
 .capitulos {
@@ -2179,7 +2034,7 @@ button:focus-visible {
   }
 }
 .cone-rotulo em.vem-de {
-  color: var(--traco-3);
+  color: rgba(234, 223, 203, 0.82);
 }
 
 /* ---------- Cone 3D: o elo na cadeia (diagrama aberto de "ver na cadeia") ---------- */

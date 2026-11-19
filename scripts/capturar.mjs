@@ -19,14 +19,15 @@ const todas = [
   ['cone', '?vista=cone'],
   ['cone-importado', '?vista=cone&lente=importado'],
   ['cone-ormuz', '?vista=cone&lente=ormuz'],
+  ['cone-ambiente', '?vista=cone&lente=ambiente'],
   ['cone-enxofre', '?vista=cone&elo=rec.enxofre'],
   ['cadeia', '?vista=cadeia'],
-  ['brasil', '?vista=brasil'],
-  ['mundo', '?vista=mundo&insumo=ins.sulfato_cromo'],
-  ['mundo-ureia', '?vista=mundo&insumo=mat.ureia'],
-  ['ormuz', '?vista=ormuz'],
-  ['mercados', '?vista=mercados&caso=eua'],
-  ['mercados-boi', '?vista=mercados&caso=boi'],
+  ['externo', '?vista=externo&sentido=exp&analise=ofertantes&passo=0&produto=acab'],
+  ['externo-preco', '?vista=externo&sentido=exp&analise=precificacao&passo=0&produto=acab'],
+  ['externo-potenciais', '?vista=externo&sentido=exp&analise=potenciais&passo=0'],
+  ['externo-potenciais-europa', '?vista=externo&sentido=exp&analise=potenciais&passo=0&escolha=europa'],
+  ['externo-origens', '?vista=externo&sentido=imp&analise=origens&passo=0&produto=cromo'],
+  ['externo-preco-imp', '?vista=externo&sentido=imp&analise=precificacao&passo=0&produto=cromo'],
 ]
 // quinto argumento opcional: nomes separados por vírgula (ex.: estrutura,ormuz)
 const vistas = soLista ? todas.filter(([n]) => soLista.split(',').includes(n)) : todas

@@ -1,5 +1,5 @@
-// O que mantém o animal: um mapa leve dos órgãos (estômagos, esôfago, intestino grosso, coração) e, dentro
-// do rúmen, o que o gado come; atrás dele, os adubos do pasto e da lavoura. As posições seguem a anatomia
+// O que mantém o animal: um mapa leve dos órgãos (estômagos, esôfago, intestino grosso, coração). O que o
+// gado come e os adubos ficam no cone pequeno sob o animal (Mistura.tsx). As posições seguem a anatomia
 // de longe, sem pretensão de exatidão: o desenho mostra o que pesa, não o detalhe.
 import * as THREE from 'three'
 import { AcPartes, tubo, type Sexo } from './forma'
@@ -8,17 +8,7 @@ type V = THREE.Vector3
 const v3 = (x = 0, y = 0, z = 0) => new THREE.Vector3(x, y, z)
 
 export type OrgaoGeo = { id: string; tri: Float32Array; nrm: Float32Array; centro: V; raio: number }
-export type Particulas = { id: string; pos: Float32Array; tam: Float32Array } // centros e tamanhos
-export type Interior = { orgaos: OrgaoGeo[]; capim: Float32Array; graos: Particulas[]; adubos: Particulas[]; rumen: { c: V; r: V } }
-
-// gerador pseudoaleatório com semente (o desenho é sempre o mesmo)
-function rng(semente: number) {
-  let s = semente >>> 0
-  return () => {
-    s = (s * 1664525 + 1013904223) >>> 0
-    return s / 4294967296
-  }
-}
+export type Interior = { orgaos: OrgaoGeo[]; rumen: { c: V; r: V } }
 
 // bolha: elipsoide com lóbulos (protuberâncias suaves em direções dadas)
 function bolha(c: V, r: V, lobos: { d: V; a: number; s: number }[], nI = 22, nK = 30) {
@@ -86,54 +76,6 @@ export function gerarInterior(sexo: Sexo, escala: number): Interior {
     0.11,
   )
 
-  // dentro do rúmen: o que o gado come
-  const rnd = rng(vaca ? 91 : 37)
-  const dentro = (f: number) => {
-    for (;;) {
-      const d = v3(rnd() * 2 - 1, rnd() * 2 - 1, rnd() * 2 - 1)
-      if (d.lengthSq() <= 1) return v3(rc.x + d.x * rr.x * f, rc.y + d.y * rr.y * f, rc.z + d.z * rr.z * f)
-    }
-  }
-  // capim: talos curtos
-  const capim: number[] = []
-  for (let i = 0; i < 90; i++) {
-    const c = dentro(0.82)
-    const d = v3(rnd() - 0.5, rnd() - 0.5, rnd() - 0.5).normalize().multiplyScalar(0.025 + rnd() * 0.03)
-    capim.push(c.x - d.x, c.y - d.y, c.z - d.z, c.x + d.x, c.y + d.y, c.z + d.z)
-  }
-  const nuvem = (id: string, n: number, t0: number, t1: number, f: number) => {
-    const pos: number[] = []
-    const tam: number[] = []
-    for (let i = 0; i < n; i++) {
-      const c = dentro(f)
-      pos.push(c.x, c.y, c.z)
-      tam.push(t0 + rnd() * (t1 - t0))
-    }
-    return { id, pos: new Float32Array(pos), tam: new Float32Array(tam) }
-  }
-  const graos = [nuvem('racao', 46, 0.009, 0.014, 0.78), nuvem('sal_mineral', 26, 0.006, 0.009, 0.8), nuvem('ureia', 18, 0.005, 0.007, 0.8)]
-
-  // atrás do rúmen: os adubos do pasto e da lavoura, numa faixa entre o rúmen e a parede do corpo
-  const faixaAdubo = (id: string, n: number, ang0: number, ang1: number, t0: number, t1: number) => {
-    const pos: number[] = []
-    const tam: number[] = []
-    for (let i = 0; i < n; i++) {
-      const a = ang0 + (ang1 - ang0) * rnd()
-      const b = (rnd() - 0.5) * 1.2
-      const k = 1.2 + rnd() * 0.18
-      const d = v3(Math.cos(a) * Math.cos(b), Math.sin(b) * 0.9, Math.sin(a) * Math.cos(b))
-      pos.push(rc.x + d.x * rr.x * k, rc.y + d.y * rr.y * k * 1.05, rc.z + d.z * rr.z * k * 0.9 - 0.04)
-      tam.push(t0 + rnd() * (t1 - t0))
-    }
-    return { id, pos: new Float32Array(pos), tam: new Float32Array(tam) }
-  }
-  const adubos = [
-    faixaAdubo('adubo_n', 18, 2.0, 2.9, 0.007, 0.012),
-    faixaAdubo('adubo_p', 18, 2.9, 3.7, 0.007, 0.012),
-    faixaAdubo('adubo_k', 22, 3.7, 4.6, 0.008, 0.013),
-    faixaAdubo('calcario', 12, 4.6, 5.2, 0.007, 0.011),
-  ]
-
   // escala do animal
   const e = escala
   const esc = (a: Float32Array) => {
@@ -145,9 +87,5 @@ export function gerarInterior(sexo: Sexo, escala: number): Interior {
     o.centro.multiplyScalar(e)
     o.raio *= e
   }
-  for (const g of [...graos, ...adubos]) {
-    esc(g.pos)
-    esc(g.tam)
-  }
-  return { orgaos, capim: esc(new Float32Array(capim)), graos, adubos, rumen: { c: rc.clone().multiplyScalar(e), r: rr.clone().multiplyScalar(e) } }
+  return { orgaos, rumen: { c: rc.clone().multiplyScalar(e), r: rr.clone().multiplyScalar(e) } }
 }

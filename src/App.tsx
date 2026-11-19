@@ -2,8 +2,6 @@ import { useEffect, useMemo, useState } from 'react'
 import { carregarTudo, type Contexto } from './dados/contexto'
 import { COR, LENTES, type Lente } from './lib/lentes'
 import { Ficha } from './componentes/Ficha'
-import { PainelChina, PainelOrmuz } from './componentes/PainelLente'
-import { PainelAmbiente } from './componentes/PainelAmbiente'
 import { Moldura } from './componentes/Moldura'
 import { BotaoFaixa, DocaContext, Menu } from './componentes/Faixa'
 import { Cone } from './vistas/Cone'
@@ -26,7 +24,7 @@ const INSUMO_DO_ELO: Record<string, string> = {
   'ins.auxiliares_acabamento': 'acabamento', 'mat.ureia': 'ureia', 'mat.map': 'map_dap', 'mat.dap': 'map_dap', 'mat.kcl': 'kcl', 'rec.enxofre': 'enxofre',
 }
 // cor da bolinha de cada lente no menu da faixa: a mesma matiz que a lente usa no cone
-const COR_LENTE: Partial<Record<Lente, string>> = { importado: COR.conhaque, ormuz: COR.vermelho, china: COR.ambar, confianca: COR.cru, ambiente: '#5fa874' }
+const COR_LENTE: Partial<Record<Lente, string>> = { importado: COR.conhaque, ormuz: COR.vermelho, china: COR.ambar, ambiente: '#5fa874' }
 
 export function App() {
   const [ctx, setCtx] = useState<Contexto | null>(null)
@@ -108,7 +106,13 @@ function Painel({ ctx }: { ctx: Contexto }) {
     setVista('externo')
     setSel(null)
   }
-  const fichaAberta = noSel && (vista === 'cone' || vista === 'cadeia')
+  const fichaAberta = noSel && vista === 'cadeia'
+  // trocar de lente desfaz a escolha: a queda do elo escolhido cobriria as cores da nova lente
+  const escolherLente = (l: Lente) => {
+    if (l === lente) return
+    setLente(l)
+    setSel(null)
+  }
 
   return (
     <DocaContext.Provider value={doca}>
@@ -119,7 +123,7 @@ function Painel({ ctx }: { ctx: Contexto }) {
         <div className="cabeca-sistema" ref={setDocaCabeca} />
         <h1>Cadeia produtiva do couro</h1>
       </header>
-      {vista === 'cone' && <Cone ctx={ctx} lente={lente} onLente={setLente} selecionado={sel} onSelecionar={setSel} cartaoAberto={!!noSel || lente === 'ormuz' || lente === 'china' || lente === 'ambiente'} />}
+      {vista === 'cone' && <Cone ctx={ctx} lente={lente} onLente={escolherLente} selecionado={sel} onSelecionar={setSel} />}
       {vista === 'bois' && (
         <VistaModelo3D
           ctx={ctx}
@@ -132,10 +136,7 @@ function Painel({ ctx }: { ctx: Contexto }) {
       {vista === 'cadeia' && <VistaProcesso ctx={ctx} selecionado={sel} onSelecionar={setSel} />}
       {vista === 'externo' && <VistaExterno />}
 
-      {fichaAberta && <Ficha cadeia={cadeia} ix={ix} no={noSel!} onSelecionar={setSel} onVerNoMapa={noSel!.comercio && INSUMO_DO_ELO[noSel!.id] ? () => irParaMapa(noSel!.id) : undefined} processo={ctx.processo} ixp={ctx.ixp} compacta={vista === 'cone'} />}
-      {!fichaAberta && vista === 'cone' && lente === 'ormuz' && <PainelOrmuz cadeia={cadeia} onSelecionar={setSel} />}
-      {!fichaAberta && vista === 'cone' && lente === 'china' && <PainelChina cadeia={cadeia} onSelecionar={setSel} />}
-      {!fichaAberta && vista === 'cone' && lente === 'ambiente' && <PainelAmbiente ctx={ctx} onSelecionar={setSel} />}
+      {fichaAberta && <Ficha cadeia={cadeia} ix={ix} no={noSel!} onSelecionar={setSel} onVerNoMapa={noSel!.comercio && INSUMO_DO_ELO[noSel!.id] ? () => irParaMapa(noSel!.id) : undefined} processo={ctx.processo} ixp={ctx.ixp} />}
 
       <nav className="controles" aria-label="Controles">
         <div className="controles-legenda" ref={setDocaLegenda} />
@@ -147,7 +148,7 @@ function Painel({ ctx }: { ctx: Contexto }) {
             onEscolher={setVista}
           />
           {vista === 'cone' && (
-            <Menu<Lente> rotulo="Lente" valor={lente} opcoes={LENTES.map((l) => ({ chave: l.chave, rotulo: l.rotulo, cor: COR_LENTE[l.chave] }))} onEscolher={setLente} />
+            <Menu<Lente> rotulo="Lente" valor={lente} opcoes={LENTES.map((l) => ({ chave: l.chave, rotulo: l.rotulo, cor: COR_LENTE[l.chave] }))} onEscolher={escolherLente} />
           )}
           <div className="faixa-vista" ref={setDocaFaixa} />
           <BotaoFaixa rotulo="Fontes e definições" ligado={fontes} onClick={() => setFontes(!fontes)}>
@@ -190,8 +191,8 @@ function Fontes({ ctx, onFechar }: { ctx: Contexto; onFechar: () => void }) {
         <li>{FONTE_CAMADAS}</li>
         <li>{FONTE_DEP}</li>
         <li>{FONTE_BOTA}</li>
-        <li>Mercado externo: Comex Stat (MDIC/Secex), exportações e importações por país e produto, 2015 a 2025, e preço por quilo por mês até o último mês publicado de 2026; UN Comtrade (API pública), exportações por exportador e destino e importações de couro curtido, 2015 a 2025, declaradas por cada país; IBGE, Pesquisa Trimestral do Abate de Animais (tabela 1092); Escritório Nacional de Estatística da China (produção de carne suína, 2019: 42,55 milhões de t, −21,3%); Bain & Company (mercado de luxo, 2025); EIU (série NEVP); curtumes das maisons: imprensa setorial e comunicado da Prada; polos do couro: lugares conhecidos do setor. Ver o relatório de comércio exterior do couro (18/11/2026)</li>
-        <li>Mercado externo, gargalos: a parte que passa por cada ponto soma o valor de 2025 dos países cuja rota esquemática até Santos passa por ele; rotas do Golfo e corte do estreito como no painel-comandante (estreito fechado em março de 2026)</li>
+        <li>Mercado externo (só o último ano: 2025, ou o último declarado no Comtrade): Comex Stat (MDIC/Secex), exportações e importações por país e produto, 2015 a 2025, e preço por quilo por mês até o último mês publicado de 2026; UN Comtrade (API pública), exportações por exportador e destino e importações de couro curtido, 2015 a 2025, declaradas por cada país; IBGE, Pesquisa Trimestral do Abate de Animais (tabela 1092); Bain & Company (mercado de luxo, 2025); EIU (série NEVP); curtumes das maisons: imprensa setorial e comunicado da Prada; polos do couro: lugares conhecidos do setor. Ver o relatório de comércio exterior do couro (18/11/2026)</li>
+        <li>Mercado externo, gargalos: a parte que passa por cada ponto soma o valor de 2025 dos países cuja rota esquemática até Santos passa por ele</li>
         <li>Mapa-múndi: Natural Earth 1:50m e, nos zooms, 1:10m (costa, fronteiras, portos, ferrovias e estradas; domínio público); máscara de água e grade de tráfego de navios do atlas do painel-comandante; tráfego: Global Fishing Watch, presença de navios por AIS, 30 dias (18/09–18/10/2026), CC BY-NC 4.0</li>
         <li>Rotas marítimas: grafo esquemático de pontos de passagem do visualizador do submarino do painel-comandante, com os portos da cadeia do couro; não são as rotas dos navios</li>
       </ul>

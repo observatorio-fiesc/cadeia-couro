@@ -4,17 +4,20 @@
 // Os números vêm do Comex Stat (externo.json), do UN Comtrade (couro-mundo.json), do IBGE (abate) e das tabelas do
 // relatório de comércio exterior (tabelas.ts); as fontes ficam no botão "Fontes e definições".
 import type { ReactNode } from 'react'
-import { curtoEstagio, destinos, exportou, GOLFO, importouAno, nf, pct, precoDe, totalAno, ultimo, variacao, type DadosExterno, type Estagio } from './dados'
-import { ondeFica, type Cena, type Enquadre, type Fluxo, type Marca, type Peca, type Rotulo, type RotaCarga, type Tom, type Trelica } from './Mapa'
+import { curtoEstagio, destinos, exportou, GOLFO, GRUPOS_INSUMO, importouAno, nf, pct, precoDe, totalAno, ultimo, variacao, type DadosExterno, type Estagio } from './dados'
+import { ondeFica, type Cena, type Enquadre, type Fluxo, type Marca, type Peca, type Rotulo, type RotaCarga, type Tom } from './Mapa'
 import type { FolhaPasso, Info, Numero } from './Folha'
-import { Corrente, FiguraProcesso, type Estacao } from './Figuras'
+import { FiguraProcesso, type Estacao } from './Figuras'
 import { BAIN, MAISONS, NAO_OBVIOS, NEVP, NEVP_ANOS, POLOS_AUTO } from './tabelas'
 import { GARGALOS, gargalosDe, PORTO, rota, type Ancora, type LonLat } from './rotas'
 
 export type Sentido = 'exp' | 'imp'
 export type Lado = 'oferta' | 'demanda'
-/** O que uma passada lê: os dados, o produto escolhido na caixa e o ano em que o vídeo está (índice em `anos`). */
-export type Ctx = { d: DadosExterno; produto: string; i: number }
+/** O que uma passada lê: os dados, o produto escolhido na caixa, o ano mostrado (índice em `anos`; por padrão, 2025)
+ *  e, nas passadas com lista própria, o item escolhido nela (null: todos). */
+export type Ctx = { d: DadosExterno; produto: string; i: number; escolha: string | null }
+/** Uma lista no quadro da direita, no lugar dos produtos: escolher um item leva a câmera até ele; nenhum, a visão de todos. */
+export type Escolhas = { titulo: string; todos: string; itens: { chave: string; nome: string; nota?: string }[] }
 export type CenaPasso = Cena & { densidade?: boolean; apagar?: boolean }
 export type Passo = {
   chave: string
@@ -23,10 +26,10 @@ export type Passo = {
   produto: boolean
   /** quanto a passada dura quando a sequência toca sozinha, ms */
   ms: number
-  /** os anos correm sozinhos, como num vídeo: do primeiro ao último índice */
-  video?: (c: Omit<Ctx, 'i'>) => [number, number]
-  /** o nome do ano do vídeo (por padrão, o ano de `anos`) */
-  ano?: (i: number) => string
+  /** o ano mostrado, quando não é 2025 (o último ano com dado do Comtrade, por exemplo); só o último ano, sem série */
+  ano?: (c: Pick<Ctx, 'd' | 'produto'>) => number
+  /** a lista própria da passada, no quadro da direita */
+  escolhas?: Escolhas
   folha: (c: Ctx) => FolhaPasso
   cena: (c: Ctx) => CenaPasso
   /** o infográfico, acima da faixa */
@@ -146,21 +149,6 @@ const mediaAno = (meses: string[], s: (number | null)[], ano: number) => {
   return v.length ? v.reduce((a, b) => a + b, 0) / v.length : null
 }
 
-/** A treliça flutua acima do mapa: a câmera olha de lado, quase na horizontal, e o chão fica embaixo dela. */
-const ALTURA_TRELICA = 2.6
-const ALTO_TRELICA = 2.0
-const cameraTrelica = (em: LonLat): Enquadre => ({
-  pontos: [
-    [em[0] - 31, em[1]],
-    [em[0] + 40, em[1]],
-  ],
-  base: ALTURA_TRELICA - 0.3,
-  alto: ALTO_TRELICA + 0.5,
-  dir: [0, 0.08, 1],
-  margem: 1.36,
-  olharAbaixo: 1.7,
-})
-
 /** Gargalos e a parte do valor que passa por cada um. */
 function partesNosGargalos(valores: [string, number][]) {
   const total = valores.reduce((s, [, v]) => s + v, 0) || 1
@@ -201,7 +189,7 @@ const ofertantes: Analise = {
       nome: 'Quem vende',
       produto: true,
       ms: 16000,
-      video: ({ d, produto }) => [0, ultimoAnoMundo(d, produto)],
+      ano: ({ d, produto }) => ultimoAnoMundo(d, produto),
       folha: ({ d, produto, i }) => {
         const cm = d.couroMundo?.produtos[produto as Estagio]
         const brasil = cm?.exportadores.find(([iso]) => iso === 'BRA')?.[1][i] ?? null
@@ -290,39 +278,48 @@ const precificacao: Analise = {
       produto: true,
       ms: 14000,
       folha: ({ d, produto }) => {
-        const p = d.preco[produto as Estagio]
-        const p15 = p[0] ?? 0
-        const p25 = p[10] ?? 0
-        return { numero: { v: p25, casas: 2, prefixo: 'US$ ', sufixo: '/kg' }, palavra: `${variacao(p25 / p15 - 1)} sobre 2015 (US$ ${nf(p15, 2)})` }
+        const e = produto as Estagio
+        return { numero: { v: d.preco[e][10] ?? 0, casas: 2, prefixo: 'US$ ', sufixo: '/kg' }, palavra: `o quilo médio de ${curtoEstagio(e)} exportado pelo Brasil em 2025` }
       },
       cena: ({ d, produto }) => {
         const e = produto as Estagio
-        const media = d.preco[e]
-        const m25 = media[10] ?? 1
-        const peso = Object.keys(d.t)
-          .map((iso) => [iso, d.t[iso][e]?.[10] ?? 0] as [string, number])
-          .filter(([iso, t]) => t >= 20 && iso !== 'ZZZ')
-          .sort((a, b) => b[1] - a[1])
+        const m25 = d.preco[e][10] ?? 1
+        // os maiores destinos em volume (ao menos 20 t), cada um com o preço que pagou em 2025
+        const destinosPreco = Object.keys(d.t)
+          .filter((iso) => iso !== 'ZZZ' && (d.t[iso][e]?.[10] ?? 0) >= 20 && ondeFica(d, iso))
+          .sort((a, b) => (d.t[b][e]?.[10] ?? 0) - (d.t[a][e]?.[10] ?? 0))
           .slice(0, 9)
-        const series: Trelica['series'] = peso.map(([iso], k) => {
-          const v = d.anos.map((_, j) => precoDe(d, iso, e, j))
-          const u = v[10] ?? ultimo(v)?.v ?? m25
-          const tom: Tom = u > m25 * 1.08 ? 'ganho' : u < m25 * 0.92 ? 'perda' : 'tinta'
-          return { id: iso, nome: nomeDe(d, iso), v, tom, rotulo: k < 3 ? `${curto(d, iso)} US$ ${nf(u, 2)}` : undefined }
-        })
-        series.splice(Math.floor(series.length / 2), 0, { id: 'media', nome: 'Média', v: media, tom: 'couro', forte: true, rotulo: `Média US$ ${nf(m25, 2)}` })
-        const em: LonLat = [-21, -6]
-        const tr: Trelica = { em, altura: ALTURA_TRELICA, largura: 6.4, alto: ALTO_TRELICA, fundo: 1.4, anos: d.anos.map(String), series, ultimo: 10, marca: '2025 · último ano completo', eixo: [[0, '2015'], [5, '2020'], [10, '2025']] }
+          .map((iso) => [iso, precoDe(d, iso, e, 10)] as [string, number | null])
+          .filter((x): x is [string, number] => x[1] !== null)
+        const maxP = Math.max(...destinosPreco.map(([, p]) => p), 1e-6)
+        const tomDe = (p: number): Tom => (p > m25 * 1.08 ? 'ganho' : p < m25 * 0.92 ? 'perda' : 'tinta')
         return {
-          pinturas: [],
-          fluxos: [],
+          pinturas: destinosPreco.map(([iso, p]) => ({ iso, v: 0.08, tom: tomDe(p) })),
+          fluxos: destinosPreco.map(([iso]) => ({ id: iso, de: BR, para: anc(d, iso), largura: 1.2, tom: 'couro' as const, atraso: 0.3 })),
           rotulos: [],
-          trelica: tr,
-          camera: cameraTrelica(em),
+          pecas: destinosPreco.map(([iso, p]) => ({ id: iso, em: ondeFica(d, iso)!, v: p / maxP, tom: tomDe(p), nome: curto(d, iso), valor: `US$ ${nf(p, 2)}/kg`, raio: 0.11 })),
+          alturaPeca: 1.6,
+          camera: vistaDe(d, destinosPreco.map(([iso]) => iso), 1.2, 1.6),
           dica: (iso) => {
             const u = precoDe(d, iso, e, 10)
             return u ? [nomeDe(d, iso), `2025: US$ ${nf(u, 2)}/kg`, `${variacao(u / m25 - 1)} da média`] : [nomeDe(d, iso)]
           },
+        }
+      },
+      info: ({ d, produto }) => {
+        const e = produto as Estagio
+        const m25 = d.preco[e][10] ?? 1
+        const cs = Object.keys(d.t)
+          .filter((iso) => iso !== 'ZZZ' && (d.t[iso][e]?.[10] ?? 0) >= 20)
+          .sort((a, b) => (d.t[b][e]?.[10] ?? 0) - (d.t[a][e]?.[10] ?? 0))
+          .slice(0, 7)
+          .map((iso) => [iso, precoDe(d, iso, e, 10)] as [string, number | null])
+          .filter((x): x is [string, number] => x[1] !== null)
+        const max = Math.max(...cs.map(([, p]) => p), m25)
+        return {
+          titulo: `preço do quilo nos maiores destinos, 2025 (média US$ ${nf(m25, 2)})`,
+          reguas: [[m25 / max, 'média']],
+          colunas: cs.map(([iso, p]) => ({ nome: curto(d, iso), v: p / max, rotulo: nf(p, 2), tom: (p > m25 * 1.08 ? 'ganho' : p < m25 * 0.92 ? 'perda' : 'tinta') as Tom })),
         }
       },
     },
@@ -392,54 +389,6 @@ const criticidadeExp: Analise = {
       cena: ({ d }) => cenaGargalos(d, valoresExp(d), 'couro'),
       info: ({ d }) => infoGargalos(partesNosGargalos(valoresExp(d)), 'do que o Brasil vende da cadeia do couro'),
     },
-    {
-      chave: 'peste',
-      nome: 'Peste suína na China',
-      produto: false,
-      ms: 15000,
-      video: () => [2, 6],
-      folha: ({ d }) => {
-        const a = d.abate
-        return {
-          numero: { v: Math.round((a[5] / a[3] - 1) * 100), sufixo: '%' },
-          palavra: `nas peles do Brasil de 2018 a 2020, enquanto a China comprava ${nf(d.carne.CHN.mil_t[5] / d.carne.CHN.mil_t[3], 1)} vezes mais carne bovina: a pele acompanha o abate`,
-        }
-      },
-      cena: ({ d, i }) => {
-        const t = d.carne.CHN.mil_t
-        const maxT = Math.max(...t)
-        const a = d.abate
-        const maxA = Math.max(...a)
-        return {
-          pinturas: [
-            { iso: 'CHN', v: 0.35, tom: 'perda' },
-            { iso: 'BRA', v: 0.4, tom: 'couro' },
-          ],
-          fluxos: [{ id: 'carne', de: BR, para: { porto: 'SHANGHAI' }, largura: larg(t[i], maxT) * 1.2, tom: 'vermelho', atraso: 0.2 }],
-          rotulos: [{ id: 'carne', em: [70, -32], texto: `carne bovina para a China · ${nf(t[i])} mil t`, forte: true, lado: 'cima', tom: 'perda' }],
-          pecas: [
-            { id: 'suinos', em: [104, 33], v: 42.55 / 54.04, fantasma: 1, tom: 'perda', nome: 'Carne suína na China', valor: i >= 4 ? '−21% em 2019' : '2018: 54 mi t', raio: 0.2 },
-            { id: 'abate', em: [-50, -15], v: a[i] / maxA, fantasma: a[3] / maxA, tom: 'couro', nome: 'Abate no Brasil', valor: `${nf(a[i], 1)} mi de cabeças`, raio: 0.2 },
-          ],
-          alturaPeca: 1.6,
-          camera: { pontos: [[-64, -34], [-38, -2], [178, 46], [100, 16], [30, -36]], dir: [0, 0.86, 0.6], margem: 1.0, alto: 1.6 },
-        }
-      },
-      lado: ({ d }) => {
-        const t = d.carne.CHN.mil_t
-        const couro = (k: number) => (['wb', 'crust', 'acab'] as Estagio[]).reduce((s, e) => s + totalAno(d, e)[k], 0)
-        return (
-          <Corrente
-            elos={[
-              { valor: '−21%', nome: 'carne suína na China', sub: '2019, peste suína africana', tom: 'perda' },
-              { valor: variacao(t[5] / t[3] - 1), nome: 'carne bovina do Brasil para a China', sub: 'toneladas, 2018–2020', tom: 'ambar' },
-              { valor: variacao(d.abate[5] / d.abate[3] - 1), nome: 'bois abatidos no Brasil', sub: 'e peles, 2018–2020', tom: 'couro' },
-              { valor: variacao(couro(5) / couro(3) - 1), nome: 'couro exportado pelo Brasil', sub: 'US$, 2018–2020', tom: 'perda' },
-            ]}
-          />
-        )
-      },
-    },
   ],
 }
 
@@ -449,13 +398,6 @@ const valoresExp = (d: DadosExterno): [string, number][] =>
     .filter((iso) => iso !== 'ZZZ')
     .map((iso) => [iso, (['cru', 'wb', 'crust', 'acab', 'outros', 'cab', 'calc', 'art'] as Estagio[]).reduce((s, e) => s + (d.exp[iso][e]?.[10] ?? 0), 0)] as [string, number])
     .filter(([, v]) => v > 0)
-
-/** O valor importado em 2025 por origem, somando os insumos. */
-const valoresImp = (d: DadosExterno): [string, number][] => {
-  const m = new Map<string, number>()
-  for (const ins of Object.values(d.imp)) for (const [iso, v] of ins.origens) m.set(iso, (m.get(iso) ?? 0) + v / 1000)
-  return [...m]
-}
 
 function cenaGargalos(d: DadosExterno, valores: [string, number][], tom: 'couro' | 'tinta'): CenaPasso {
   const gs = partesNosGargalos(valores)
@@ -492,12 +434,11 @@ const compradores: Analise = {
       nome: 'Para onde vai',
       produto: true,
       ms: 16000,
-      video: () => [0, 10],
       folha: ({ d, produto, i }) => ({ numero: usd(totalAno(d, produto as Estagio)[i]), palavra: `de ${curtoEstagio(produto)} vendidos pelo Brasil em ${d.anos[i]}` }),
       cena: ({ d, produto, i }) => {
         const e = produto as Estagio
         const ds = destinos(d, [e], i).slice(0, 14)
-        const max = Math.max(...d.anos.map((_, k) => destinos(d, [e], k)[0]?.[1] ?? 0))
+        const max = ds[0]?.[1] ?? 1
         return {
           pinturas: ds.map(([iso, v]) => ({ iso, v: 0.08 + 0.55 * Math.sqrt(v / max), tom: 'couro' })),
           fluxos: ds.map(([iso, v]) => ({ id: iso, de: BR, para: anc(d, iso), largura: larg(v, max), tom: 'couro', atraso: 0.2 })),
@@ -505,70 +446,12 @@ const compradores: Analise = {
           camera: MUNDO,
           dica: (iso) => {
             const v = exportou(d, iso, [e], i)
-            const v0 = exportou(d, iso, [e], 0)
-            return v || v0 ? [nomeDe(d, iso), `${d.anos[i]}: ${usdTxt(v)}`, `2015: ${usdTxt(v0)}`] : [nomeDe(d, iso)]
+            return v ? [nomeDe(d, iso), `${d.anos[i]}: ${usdTxt(v)}`] : [nomeDe(d, iso)]
           },
         }
       },
     },
-    {
-      chave: 'deslocamento',
-      nome: 'Para onde foi',
-      produto: true,
-      ms: 12000,
-      folha: ({ d, produto }) => {
-        const { ganhos, perdas } = deslocamento(d, produto as Estagio)
-        const g = ganhos[0]
-        const p = perdas[0]
-        if (!g) return { numero: { v: 0, sufixo: ' p.p.' }, palavra: 'sem mudança de 2015 a 2025' }
-        return {
-          numero: { v: g[1] * 100, casas: 1, sinal: true, sufixo: ' p.p.' },
-          palavra: `na parte ${com('de', d, g[0])} nas vendas de ${curtoEstagio(produto)} do Brasil, de 2015 a 2025${p ? `; ${nomeDe(d, p[0])}, ${p[1] > 0 ? '+' : '−'}${nf(Math.abs(p[1]) * 100, 1)} p.p.` : ''}`,
-        }
-      },
-      cena: ({ d, produto }) => {
-        const e = produto as Estagio
-        const { ganhos, perdas } = deslocamento(d, e)
-        const todos = [...ganhos, ...perdas]
-        const tot = totalAno(d, e)
-        const parte = (iso: string, k: number) => exportou(d, iso, [e], k) / (tot[k] || 1)
-        const maxV = Math.max(...todos.flatMap(([iso]) => [parte(iso, 0), parte(iso, 10)]), 1e-6)
-        const maxG = Math.max(...ganhos.map(([, v]) => v), 1e-6)
-        const de = perdas[0]?.[0]
-        return {
-          pinturas: todos.map(([iso, dv]) => ({ iso, v: 0.12, tom: dv > 0 ? 'ganho' : 'perda' })),
-          fluxos: de ? ganhos.map(([iso, dv]) => ({ id: `${de}>${iso}`, de: anc(d, de), para: anc(d, iso), largura: larg(dv, maxG), tom: 'ganho', atraso: 1.2 })) : [],
-          rotulos: [],
-          pecas: todos
-            .filter(([iso]) => ondeFica(d, iso))
-            .map(([iso, dv]) => ({
-              id: iso,
-              em: ondeFica(d, iso)!,
-              v: parte(iso, 10) / maxV,
-              fantasma: parte(iso, 0) / maxV,
-              tom: dv > 0 ? 'ganho' : 'perda',
-              nome: curto(d, iso),
-              valor: `${dv > 0 ? '+' : '−'}${nf(Math.abs(dv) * 100, 1)} p.p.`,
-              raio: 0.3,
-            })),
-          alturaPeca: 3.2,
-          camera: vistaDe(d, todos.map(([iso]) => iso), 1.2, 1.4),
-        }
-      },
-    },
   ],
-}
-
-/** Quem mais ganhou e quem mais perdeu participação nas vendas do produto, de 2015 a 2025 (fração). */
-function deslocamento(d: DadosExterno, e: Estagio) {
-  const tot = totalAno(d, e)
-  const dif = Object.keys(d.exp)
-    .filter((iso) => iso !== 'ZZZ')
-    .map((iso) => [iso, exportou(d, iso, [e], 10) / (tot[10] || 1) - exportou(d, iso, [e], 0) / (tot[0] || 1)] as [string, number])
-  return {
-    ganhos: dif.filter(([, v]) => v > 0).sort((a, b) => b[1] - a[1]).slice(0, 4),
-    perdas: dif.filter(([, v]) => v < 0).sort((a, b) => a[1] - b[1]).slice(0, 2),
-  }
 }
 
 /** As importações de couro curtido por país (Comtrade), quando o arquivo já tem os importadores. */
@@ -593,74 +476,134 @@ const PELA: Record<string, string> = {
 const JANELA_GRUPO: Record<string, string[]> = { europa: ['europa_centro'], asia: ['vietna'] }
 const COURO_CURTIDO: Estagio[] = ['wb', 'crust', 'acab']
 
+/** O couro curtido comprado por um país no último ano que ele declarou (US$ mi) e a parte do Brasil; sem os
+ *  importadores do Comtrade, o que o Brasil vendeu em 2025. */
+function compraDoPais(d: DadosExterno, iso: string) {
+  const imp = temImportadores(d)
+  if (!imp) {
+    const v = exportou(d, iso, COURO_CURTIDO, 10) / 1000
+    return { mundo: v, brasil: v, i: 10 }
+  }
+  const u = ultimoDoPais(imp, iso)
+  return u ? { mundo: u.mundo, brasil: u.brasil, i: u.i } : { mundo: 0, brasil: 0, i: 10 }
+}
+/** A folha de um conjunto de países: quanto compram de couro curtido e a parte do Brasil. */
+function folhaCompra(d: DadosExterno, paises: string[], quem: string): FolhaPasso {
+  const imp = temImportadores(d)
+  if (!imp) {
+    const s = paises.reduce((a, iso) => a + exportou(d, iso, COURO_CURTIDO, 10), 0)
+    return { numero: usd(s), palavra: `de couro do Brasil comprados ${quem} em 2025` }
+  }
+  const us = paises.map((iso) => ultimoDoPais(imp, iso)).filter((x): x is NonNullable<typeof x> => x !== null)
+  const m = us.reduce((a, x) => a + x.mundo, 0)
+  const b = us.reduce((a, x) => a + x.brasil, 0)
+  const anos = [...new Set(us.map((x) => d.anos[x.i]))].sort()
+  const quando = anos.length === 1 ? `em ${anos[0]}` : 'no último ano de cada país'
+  return {
+    numero: { v: m, casas: m < 10 ? 1 : 0, prefixo: 'US$ ', sufixo: ' mi' },
+    palavra: `de couro curtido comprados ${quem} ${quando}; do Brasil, ${pct(b / (m || 1), b / (m || 1) < 0.1 ? 1 : 0)}`,
+  }
+}
+/** Uma região de perto: cada país com o que compra e, dentro, a parte do Brasil. */
+function cenaRegiao(d: DadosExterno, g: (typeof NAO_OBVIOS)[number]): CenaPasso {
+  const imp = temImportadores(d)
+  const compra = (iso: string) => compraDoPais(d, iso)
+  const anoMais = Math.max(...g.paises.map((iso) => compra(iso).i))
+  const anoDe = (iso: string) => (imp && compra(iso).i < anoMais ? ` (${d.anos[compra(iso).i]})` : '')
+  const max = Math.max(...g.paises.map((iso) => compra(iso).mundo), 1e-6)
+  const maxB = Math.max(...g.paises.map((iso) => exportou(d, iso, COURO_CURTIDO, 10)), 1)
+  const um = g.paises.length === 1
+  const alto = um ? 0.5 : 0.9
+  const pecas: Peca[] = g.paises
+    .filter((iso) => ondeFica(d, iso))
+    .flatMap((iso): Peca[] => {
+      const { mundo, brasil } = compra(iso)
+      return [
+        {
+          id: `${iso}-m`,
+          em: ondeFica(d, iso)!,
+          v: mundo / max,
+          tom: 'tinta',
+          nome: curto(d, iso),
+          valor: imp ? `US$ ${nf(mundo, mundo < 10 ? 1 : 0)} mi · Brasil ${pct(brasil / (mundo || 1))}${anoDe(iso)}` : `US$ ${nf(mundo, mundo < 10 ? 1 : 0)} mi do Brasil`,
+          raio: um ? 0.09 : 0.11,
+        },
+        ...(imp ? [{ id: `${iso}-b`, em: ondeFica(d, iso)!, v: brasil / max, tom: 'couro' as Tom, raio: um ? 0.045 : 0.055 }] : []),
+      ]
+    })
+  return {
+    pinturas: g.paises.map((iso) => ({ iso, v: 0.08, tom: 'couro' })),
+    fluxos: g.paises
+      .filter((iso) => exportou(d, iso, COURO_CURTIDO, 10) > 0)
+      .map((iso) => ({ id: iso, de: BR, para: anc(d, iso), largura: larg(exportou(d, iso, COURO_CURTIDO, 10), maxB) * 0.8, tom: 'couro', atraso: 0.6 })),
+    rotulos: [],
+    pecas,
+    alturaPeca: alto,
+    camera: um ? { pontos: perto(ondeFica(d, g.paises[0])!, 8), dir: [0.04, 0.84, 0.62], margem: 1.1, alto } : vistaDe(d, g.paises, 1.3, alto),
+    detalhe: JANELA_GRUPO[g.chave],
+    portos: false,
+  }
+}
+/** Todas as regiões de uma vez: uma peça por região, no meio dos seus países, com o total e a parte do Brasil. */
+function cenaRegioes(d: DadosExterno): CenaPasso {
+  const imp = temImportadores(d)
+  const regioes = NAO_OBVIOS.map((g) => {
+    const pts = g.paises.map((iso) => ondeFica(d, iso)).filter((x): x is LonLat => !!x)
+    const centro: LonLat = [pts.reduce((a, p) => a + p[0], 0) / pts.length, pts.reduce((a, p) => a + p[1], 0) / pts.length]
+    const mundo = g.paises.reduce((a, iso) => a + compraDoPais(d, iso).mundo, 0)
+    const brasil = g.paises.reduce((a, iso) => a + compraDoPais(d, iso).brasil, 0)
+    const vendas = g.paises.reduce((a, iso) => a + exportou(d, iso, COURO_CURTIDO, 10), 0)
+    return { g, centro, mundo, brasil, vendas }
+  })
+  const max = Math.max(...regioes.map((x) => x.mundo), 1e-6)
+  const maxB = Math.max(...regioes.map((x) => x.vendas), 1)
+  const alto = 1.8
+  return {
+    pinturas: NAO_OBVIOS.flatMap((g) => g.paises.map((iso) => ({ iso, v: 0.08, tom: 'couro' as Tom }))),
+    fluxos: regioes
+      .filter((x) => x.vendas > 0)
+      .map((x) => ({ id: x.g.chave, de: BR, para: { lonlat: x.centro }, largura: larg(x.vendas, maxB) * 0.8, tom: 'couro' as const, atraso: 0.6 })),
+    rotulos: [],
+    pecas: regioes.flatMap((x): Peca[] => [
+      {
+        id: `${x.g.chave}-m`,
+        em: x.centro,
+        v: x.mundo / max,
+        tom: 'tinta',
+        nome: x.g.nome,
+        valor: imp ? `US$ ${nf(x.mundo, x.mundo < 10 ? 1 : 0)} mi · Brasil ${pct(x.brasil / (x.mundo || 1))}` : `US$ ${nf(x.mundo, x.mundo < 10 ? 1 : 0)} mi do Brasil`,
+        raio: 0.12,
+      },
+      ...(imp ? [{ id: `${x.g.chave}-b`, em: x.centro, v: x.brasil / max, tom: 'couro' as Tom, raio: 0.06 }] : []),
+    ]),
+    alturaPeca: alto,
+    camera: vistaDe(d, NAO_OBVIOS.flatMap((g) => g.paises), 1.15, alto),
+    portos: false,
+  }
+}
+
+// Uma passada só: todas as regiões no mapa; a lista à direita leva a câmera a cada uma (e diz por que ela conta).
 const potenciais: Analise = {
   chave: 'potenciais',
   nome: 'Mercados potenciais',
   lado: 'demanda',
-  passos: NAO_OBVIOS.map(
-    (g): Passo => ({
-      chave: g.chave,
-      nome: g.nome,
+  passos: [
+    {
+      chave: 'regioes',
+      nome: 'Mercados não óbvios',
       produto: false,
-      ms: 11000,
-      folha: ({ d }) => {
-        const imp = temImportadores(d)
-        if (!imp) {
-          const s = g.paises.reduce((a, iso) => a + exportou(d, iso, COURO_CURTIDO, 10), 0)
-          return { numero: usd(s), palavra: `de couro do Brasil comprados ${PELA[g.chave]} em 2025` }
-        }
-        const us = g.paises.map((iso) => ultimoDoPais(imp, iso)).filter((x): x is NonNullable<typeof x> => x !== null)
-        const m = us.reduce((a, x) => a + x.mundo, 0)
-        const b = us.reduce((a, x) => a + x.brasil, 0)
-        const anos = [...new Set(us.map((x) => d.anos[x.i]))].sort()
-        const quando = anos.length === 1 ? `em ${anos[0]}` : 'no último ano de cada país'
-        return {
-          numero: { v: m, casas: m < 10 ? 1 : 0, prefixo: 'US$ ', sufixo: ' mi' },
-          palavra: `de couro curtido comprados ${PELA[g.chave]} ${quando}; do Brasil, ${pct(b / (m || 1), b / (m || 1) < 0.1 ? 1 : 0)}`,
-        }
+      ms: 14000,
+      escolhas: { titulo: 'Região', todos: 'Todas as regiões', itens: NAO_OBVIOS.map((g) => ({ chave: g.chave, nome: g.nome, nota: g.texto })) },
+      folha: ({ d, escolha }) => {
+        const g = NAO_OBVIOS.find((x) => x.chave === escolha)
+        return g ? folhaCompra(d, g.paises, PELA[g.chave]) : folhaCompra(d, NAO_OBVIOS.flatMap((x) => x.paises), `pelos ${NAO_OBVIOS.length} mercados não óbvios`)
       },
-      cena: ({ d }) => {
-        const imp = temImportadores(d)
-        const mundo = (iso: string) => (imp ? ultimoDoPais(imp, iso)?.mundo ?? 0 : exportou(d, iso, COURO_CURTIDO, 10) / 1000)
-        const brasil = (iso: string) => (imp ? ultimoDoPais(imp, iso)?.brasil ?? 0 : exportou(d, iso, COURO_CURTIDO, 10) / 1000)
-        const anoMais = imp ? Math.max(...g.paises.map((iso) => ultimoDoPais(imp, iso)?.i ?? 0)) : 10
-        const anoDe = (iso: string) => {
-          const u = imp ? ultimoDoPais(imp, iso) : null
-          return u && u.i < anoMais ? ` (${d.anos[u.i]})` : ''
-        }
-        const max = Math.max(...g.paises.map(mundo), 1e-6)
-        const maxB = Math.max(...g.paises.map((iso) => exportou(d, iso, COURO_CURTIDO, 10)), 1)
-        const um = g.paises.length === 1
-        const alto = um ? 0.5 : 0.9
-        const pecas: Peca[] = g.paises
-          .filter((iso) => ondeFica(d, iso))
-          .flatMap((iso): Peca[] => [
-            {
-              id: `${iso}-m`,
-              em: ondeFica(d, iso)!,
-              v: mundo(iso) / max,
-              tom: 'tinta',
-              nome: curto(d, iso),
-              valor: imp ? `US$ ${nf(mundo(iso), mundo(iso) < 10 ? 1 : 0)} mi · Brasil ${pct(brasil(iso) / (mundo(iso) || 1))}${anoDe(iso)}` : `US$ ${nf(mundo(iso), mundo(iso) < 10 ? 1 : 0)} mi do Brasil`,
-              raio: um ? 0.09 : 0.11,
-            },
-            ...(imp ? [{ id: `${iso}-b`, em: ondeFica(d, iso)!, v: brasil(iso) / max, tom: 'couro' as Tom, raio: um ? 0.045 : 0.055 }] : []),
-          ])
-        return {
-          pinturas: g.paises.map((iso) => ({ iso, v: 0.08, tom: 'couro' })),
-          fluxos: g.paises
-            .filter((iso) => exportou(d, iso, COURO_CURTIDO, 10) > 0)
-            .map((iso) => ({ id: iso, de: BR, para: anc(d, iso), largura: larg(exportou(d, iso, COURO_CURTIDO, 10), maxB) * 0.8, tom: 'couro', atraso: 0.6 })),
-          rotulos: [],
-          pecas,
-          alturaPeca: alto,
-          camera: um ? { pontos: perto(ondeFica(d, g.paises[0])!, 8), dir: [0.04, 0.84, 0.62], margem: 1.1, alto } : vistaDe(d, g.paises, 1.3, alto),
-          detalhe: JANELA_GRUPO[g.chave],
-          portos: false,
-        }
+      cena: ({ d, escolha }) => {
+        const g = NAO_OBVIOS.find((x) => x.chave === escolha)
+        return g ? cenaRegiao(d, g) : cenaRegioes(d)
       },
-    }),
-  ),
+    },
+  ],
 }
 
 const luxo: Analise = {
@@ -675,7 +618,7 @@ const luxo: Analise = {
       ms: 13000,
       folha: ({ d }) => {
         const s = (k: number) => exportou(d, 'ITA', COURO_CURTIDO, k) + exportou(d, 'FRA', COURO_CURTIDO, k)
-        return { numero: usd(s(10)), palavra: `de couro do Brasil para Itália e França em 2025, ${variacao(s(10) / s(0) - 1)} desde 2015` }
+        return { numero: usd(s(10)), palavra: 'de couro do Brasil para Itália e França em 2025' }
       },
       cena: ({ d }) => {
         const pol = [marcasPolos('ITA'), marcasPolos('FRA')]
@@ -705,7 +648,7 @@ const luxo: Analise = {
       nome: 'O que muda',
       produto: false,
       ms: 16000,
-      video: ({ d }) => [0, Math.min(ultimoAnoMundo(d, 'acab'), ultimoAnoMundo(d, 'art'))],
+      ano: ({ d }) => Math.min(ultimoAnoMundo(d, 'acab'), ultimoAnoMundo(d, 'art')),
       folha: () => ({ numero: { v: BAIN.variacao2025 * 100, sufixo: '%' }, palavra: `no mercado de bens pessoais de luxo em 2025 (€ ${BAIN.mercado2025} bi); artigos de couro, ${BAIN.couroVar}` }),
       cena: ({ d, i }) => {
         const cm = d.couroMundo
@@ -720,7 +663,7 @@ const luxo: Analise = {
           }
         const maxF = Math.max(...[...pares.values()].flatMap((s) => s.map((x) => x ?? 0)), 1)
         const exp = (iso: string, k: number) => (['acab', 'art'] as Estagio[]).reduce((s, e) => s + (cm.produtos[e].exportadores.find(([x]) => x === iso)?.[1][k] ?? 0), 0)
-        const maxE = Math.max(...d.anos.flatMap((_, k) => [exp('ITA', k), exp('FRA', k)]), 1)
+        const maxE = Math.max(exp('ITA', i), exp('FRA', i), 1)
         return {
           pinturas: [
             { iso: 'ITA', v: 0.45, tom: 'couro' },
@@ -737,7 +680,6 @@ const luxo: Analise = {
             id: iso,
             em: ondeFica(d, iso)!,
             v: exp(iso, i) / maxE,
-            fantasma: exp(iso, 0) / maxE,
             tom: (iso === 'ITA' ? 'couro' : 'ambar') as Tom,
             nome: nomeDe(d, iso),
             valor: `US$ ${nf(exp(iso, i) / 1000, 1)} bi`,
@@ -800,8 +742,8 @@ const automotivo: Analise = {
       nome: 'Elétricos',
       produto: false,
       ms: 12000,
-      video: () => [0, NEVP_ANOS.length - 1],
-      ano: (i) => String(NEVP_ANOS[i]),
+      // 2025: o último ano que não é projeção da EIU (o índice aqui é o de NEVP_ANOS)
+      ano: () => NEVP_ANOS.indexOf(2025),
       folha: ({ i }) => {
         const [v, tipo] = NEVP.find((n) => n.iso === 'CHN')!.v[i]
         return {
@@ -833,7 +775,6 @@ const origens: Analise = {
       nome: 'De onde vem',
       produto: true,
       ms: 16000,
-      video: () => [0, 10],
       folha: ({ d, produto, i }) => ({ numero: usd(importouAno(d, produto)[i]), palavra: `de importações de ${d.imp[produto].nome.toLowerCase()} em ${d.anos[i]}` }),
       cena: ({ d, produto, i }) => {
         const s = d.impAno[produto] ?? {}
@@ -841,13 +782,13 @@ const origens: Analise = {
           .filter(([, v]) => v[i] > 0)
           .sort((a, b) => b[1][i] - a[1][i])
           .slice(0, 12)
-        const max = Math.max(...Object.values(s).flatMap((v) => v), 1)
+        const max = ano[0]?.[1][i] || 1
         return {
           pinturas: ano.map(([iso, v]) => ({ iso, v: 0.08 + 0.55 * Math.sqrt(v[i] / max), tom: GOLFO.has(iso) ? 'perda' : 'couro' })),
           fluxos: ano.map(([iso, v]) => ({ id: iso, de: anc(d, iso), para: BR, largura: larg(v[i], max), tom: GOLFO.has(iso) ? 'vermelho' : 'palido', atraso: 0.2 })),
           rotulos: ano.slice(0, 6).map(([iso, v], k) => ({ id: iso, em: ondeFica(d, iso)!, texto: `${curto(d, iso)} ${nf(v[i] / 1000, v[i] < 1e4 ? 1 : 0)}`, forte: k < 3 })),
           camera: MUNDO,
-          dica: (iso) => (s[iso] ? [nomeDe(d, iso), `${d.anos[i]}: ${usdTxt(s[iso][i])}`, `2015: ${usdTxt(s[iso][0])}`] : [nomeDe(d, iso)]),
+          dica: (iso) => (s[iso]?.[i] ? [nomeDe(d, iso), `${d.anos[i]}: ${usdTxt(s[iso][i])}`] : [nomeDe(d, iso)]),
         }
       },
     },
@@ -862,7 +803,7 @@ const origens: Analise = {
         const art = ART_INS[produto] ?? 'do'
         return {
           numero: { v: parte[10] * 100, sufixo: '%' },
-          palavra: `${art} ${d.imp[produto].nome.toLowerCase()} que o Brasil importa ${art.endsWith('s') ? 'vêm' : 'vem'} ${com('de', d, iso)} (2025); em 2015, ${pct(parte[0])}`,
+          palavra: `${art} ${d.imp[produto].nome.toLowerCase()} que o Brasil importa ${art.endsWith('s') ? 'vêm' : 'vem'} ${com('de', d, iso)} (2025)`,
         }
       },
       cena: ({ d, produto }) => {
@@ -896,6 +837,20 @@ function dominante(d: DadosExterno, produto: string) {
   return { iso, topo, parte: iso ? d.anos.map((_, k) => (tot[k] ? s[iso][k] / tot[k] : 0)) : [] }
 }
 
+/** O nome curto de cada insumo, sob as colunas do preço do quilo. */
+const CURTO_INS: Record<string, string> = {
+  cromo: 'Cromo', formico: 'Ác. fórmico', sulfeto: 'Sulfeto', taninos: 'Taninos', recurtentes: 'Recurt.', engraxe: 'Óleos',
+  corantes: 'Corantes', acabamento: 'Acabam.', couros: 'Couros', ureia: 'Ureia', kcl: 'KCl', map_dap: 'MAP e DAP',
+  sulfato_amonio: 'Sulf. amônio', enxofre: 'Enxofre',
+}
+/** O preço do quilo de um insumo em 2025: valor sobre peso, ou a média dos meses de 2025. */
+const precoImp = (d: DadosExterno, k: string) => {
+  const ins = d.imp[k]
+  if (!ins) return null
+  if (ins.kg) return ins.usd / ins.kg
+  return d.precoImpMes[k] ? mediaAno(d.meses, d.precoImpMes[k], 2025) : null
+}
+
 const precificacaoImp: Analise = {
   chave: 'precificacao',
   nome: 'Precificação',
@@ -908,109 +863,43 @@ const precificacaoImp: Analise = {
       ms: 14000,
       folha: ({ d, produto }) => {
         const ins = d.imp[produto]
-        const s = d.precoImpMes[produto]
-        if (!s) return { numero: usd(ins.usd / 1000), palavra: `de importações de ${ins.nome.toLowerCase()} em 2025` }
-        const p25 = ins.kg ? ins.usd / ins.kg : (mediaAno(d.meses, s, 2025) ?? 0)
-        const p15 = mediaAno(d.meses, s, 2015) ?? p25
-        const casas = p25 < 1 ? 3 : 2
-        return { numero: { v: p25, casas, prefixo: 'US$ ', sufixo: '/kg' }, palavra: `${variacao(p25 / p15 - 1)} sobre 2015 (US$ ${nf(p15, casas)})` }
+        const p = precoImp(d, produto)
+        if (!p) return { numero: usd(ins.usd / 1000), palavra: `de importações de ${ins.nome.toLowerCase()} em 2025` }
+        return { numero: { v: p, casas: p < 1 ? 3 : 2, prefixo: 'US$ ', sufixo: '/kg' }, palavra: `o quilo ${ART_INS[produto] ?? 'do'} ${ins.nome.toLowerCase()} importado pelo Brasil em 2025` }
       },
+      // o mapa: de onde o insumo veio em 2025
       cena: ({ d, produto }) => {
-        const chaves = Object.keys(d.precoImpMes)
-        const anual = (k: string) => d.anos.map((a) => mediaAno(d.meses, d.precoImpMes[k], a))
-        const muda = (k: string) => {
-          const v = anual(k)
-          return v[0] && v[10] ? v[10] / v[0] - 1 : 0
-        }
-        const subida = [...chaves].sort((a, b) => muda(b) - muda(a))
-        const nomeados = new Set([produto, ...subida.slice(0, 3)])
-        const series: Trelica['series'] = chaves.map((k) => ({
-          id: k,
-          nome: d.imp[k]?.nome ?? k,
-          v: anual(k),
-          tom: k === produto ? 'couro' : muda(k) > 0.1 ? 'perda' : muda(k) < -0.1 ? 'ganho' : 'tinta',
-          forte: k === produto,
-          rotulo: nomeados.has(k) ? `${d.imp[k]?.nome ?? k} ${variacao(muda(k))}` : undefined,
-        }))
-        const em: LonLat = [-21, -6]
-        const tr: Trelica = { em, altura: ALTURA_TRELICA, largura: 6.4, alto: ALTO_TRELICA, fundo: 1.5, anos: d.anos.map(String), series, ultimo: 10, marca: '2025 · último ano completo', eixo: [[0, '2015'], [5, '2020'], [10, '2025']] }
-        return { pinturas: [], fluxos: [], rotulos: [], trelica: tr, camera: cameraTrelica(em) }
-      },
-    },
-  ],
-}
-
-/* As rotas dos petroleiros no Golfo, dos terminais ao estreito e ao mar Arábico (como no painel-comandante). */
-const ESTREITO: LonLat = [56.36, 26.6]
-const TRONCO: LonLat[] = [[48.95, 29.55], [49.9, 28.75], [50.9, 27.85], [52.2, 27.0], [53.6, 26.4], [54.9, 26.2], [55.8, 26.35], ESTREITO, [56.75, 26.1], [57.15, 25.4], [57.9, 24.9], [59.0, 24.35], [60.4, 23.6], [62.4, 22.6]]
-const RAMAIS: { de: LonLat[]; junta: number; nome: string }[] = [
-  { de: [[50.3, 29.2], [50.55, 28.6]], junta: 2, nome: 'Kharg' },
-  { de: [[50.2, 26.7], [50.9, 27.3]], junta: 3, nome: 'Ras Tanura' },
-  { de: [[51.6, 25.95], [52.5, 26.45]], junta: 4, nome: 'Ras Laffan' },
-  { de: [[52.65, 24.25], [53.4, 25.2], [54.1, 25.95]], junta: 5, nome: 'Ruwais' },
-  { de: [[55.0, 25.05], [55.35, 25.8]], junta: 6, nome: 'Jebel Ali' },
-  { de: [[56.25, 27.1]], junta: 7, nome: 'Bandar Abbas' },
-]
-const CORTE: [LonLat, LonLat] = [
-  [56.3, 26.36],
-  [56.44, 26.9],
-]
-
-const criticidadeImp: Analise = {
-  chave: 'criticidade',
-  nome: 'Criticidade logística',
-  lado: 'oferta',
-  passos: [
-    {
-      chave: 'passagens',
-      nome: 'Pontos de passagem',
-      produto: false,
-      ms: 13000,
-      folha: ({ d }) => {
-        const g = partesNosGargalos(valoresImp(d))[0]
-        return g ? { numero: { v: g.parte * 100, sufixo: '%' }, palavra: `do que o Brasil compra para o couro e o boi passa ${PELO[g.id]}` } : { numero: { v: 0 }, palavra: 'sem gargalo nas rotas' }
-      },
-      cena: ({ d }) => cenaGargalos(d, valoresImp(d), 'tinta'),
-      info: ({ d }) => infoGargalos(partesNosGargalos(valoresImp(d)), 'do que o Brasil compra para o couro e o boi'),
-    },
-    {
-      chave: 'ormuz',
-      nome: 'Ormuz',
-      produto: false,
-      ms: 12000,
-      folha: ({ d }) => {
-        const it = [...d.ormuz.itens].sort((a, b) => b.dentro - a.dentro)[0]
-        return { numero: { v: it.dentro * 100, sufixo: '%' }, palavra: `do ${it.nome.toLowerCase()} comprado pelo Brasil sai de dentro do Golfo; o estreito fechou em março de 2026` }
-      },
-      cena: () => {
-        const rotas: RotaCarga[] = [
-          { id: 'tronco', pts: TRONCO, peso: 0.55, corte: ESTREITO },
-          ...RAMAIS.map((r) => ({ id: r.nome, pts: [...r.de, ...TRONCO.slice(r.junta)], peso: 0.3, corte: ESTREITO })),
-        ]
+        const s = d.impAno[produto] ?? {}
+        const ano = Object.entries(s)
+          .filter(([, v]) => v[10] > 0)
+          .sort((a, b) => b[1][10] - a[1][10])
+          .slice(0, 8)
+        const max = ano[0]?.[1][10] || 1
         return {
-          pinturas: [],
-          fluxos: [],
-          rotulos: [
-            { id: 'golfo', em: [51.4, 27.6], texto: 'Golfo Pérsico', classe: 'agua', lado: 'cima' },
-            { id: 'oma', em: [58.9, 24.9], texto: 'Golfo de Omã', classe: 'agua', lado: 'cima' },
-            ...RAMAIS.map((r) => ({ id: r.nome, em: r.de[0], texto: r.nome, lado: 'esq' as const })),
-          ],
-          carga: {
-            rotas,
-            gargalos: [{ id: 'ormuz', nome: 'Estreito de Ormuz', em: [56.45, 26.55], fechado: true, raio: 0.035 }],
-            fechaEm: 2.4,
-            linhasDeCorte: [CORTE],
-            velocidade: 0.11,
-            tamanho: 4.4,
-          },
-          detalhe: ['golfo'],
-          portos: false,
-          camera: { pontos: [[48.5, 30], [60.5, 22.5], [56.4, 26.6]], dir: [0.15, 0.9, 0.62], margem: 0.92 },
+          pinturas: ano.map(([iso, v]) => ({ iso, v: 0.08 + 0.45 * Math.sqrt(v[10] / max), tom: GOLFO.has(iso) ? 'perda' : 'couro' })),
+          fluxos: ano.map(([iso, v]) => ({ id: iso, de: anc(d, iso), para: BR, largura: larg(v[10], max), tom: GOLFO.has(iso) ? 'vermelho' : 'palido', atraso: 0.2 })),
+          rotulos: [],
+          camera: MUNDO,
         }
       },
-      info: ({ d }) => {
-        const its = [...d.ormuz.itens].filter((x) => x.dentro >= 0.01).sort((a, b) => b.dentro - a.dentro).slice(0, 5)
-        return { titulo: 'parte comprada de dentro do Golfo, 2025', reguas: [[0.5, '25%'], [1, '50%']], colunas: its.map((x) => ({ nome: x.nome, v: x.dentro / 0.5, rotulo: pct(x.dentro), tom: 'perda' as Tom })) }
+      // ao lado: o quilo de cada insumo do mesmo grupo em 2025, o escolhido em destaque
+      info: ({ d, produto }) => {
+        const grupo = GRUPOS_INSUMO.find((g) => g.chaves.includes(produto))
+        // as máquinas ficam fora: o quilo de uma máquina não se compara ao de um químico
+        const todos = (grupo?.chaves ?? [produto])
+          .filter((k) => k !== 'maquinas' || k === produto)
+          .map((k) => [k, precoImp(d, k)] as [string, number | null])
+          .filter((x): x is [string, number] => x[1] !== null && x[1] > 0)
+          .sort((a, b) => b[1] - a[1])
+        // até 6 colunas, sempre com o escolhido
+        const outros = new Set(todos.filter(([k]) => k !== produto).slice(0, todos.some(([k]) => k === produto) ? 5 : 6).map(([k]) => k))
+        const cs = todos.filter(([k]) => k === produto || outros.has(k))
+        if (!cs.length) return null
+        const max = cs[0][1]
+        return {
+          titulo: `preço do quilo importado em 2025${grupo ? `, ${grupo.nome.toLowerCase()}` : ''}`,
+          colunas: cs.map(([k, p]) => ({ nome: CURTO_INS[k] ?? d.imp[k]?.nome ?? k, v: p / max, rotulo: nf(p, p < 1 ? 3 : 2), tom: (k === produto ? 'couro' : 'tinta') as Tom })),
+        }
       },
     },
   ],
@@ -1100,7 +989,7 @@ function cenaOrigens(d: DadosExterno, chaves: string[]): CenaPasso {
 
 export const ANALISES: Record<Sentido, Analise[]> = {
   exp: [ofertantes, precificacao, criticidadeExp, compradores, potenciais, luxo, automotivo],
-  imp: [origens, precificacaoImp, criticidadeImp, curtume, boi],
+  imp: [origens, precificacaoImp, curtume, boi],
 }
 export const NOME_SENTIDO: Record<Sentido, string> = { exp: 'Exportações', imp: 'Importações' }
 export const NOME_LADO: Record<Lado, string> = { oferta: 'Oferta', demanda: 'Demanda' }

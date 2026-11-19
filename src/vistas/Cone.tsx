@@ -231,7 +231,7 @@ varying float vSize;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   float fade = clamp((-mv.z - uDepth.x) / max(uDepth.y - uDepth.x, 0.001), 0.0, 1.0);
-  vColor = vec4(aColor.rgb, aColor.a * mix(1.0, 0.4, fade));
+  vColor = vec4(aColor.rgb, aColor.a * mix(1.0, 0.85, fade));
   vFill = aFill;
   vGlow = aGlow;
   gl_PointSize = aSize * uScale * clamp(uRef / -mv.z, 0.6, 1.7);
@@ -263,7 +263,7 @@ varying vec4 vColor;
 void main() {
   vec4 mv = modelViewMatrix * vec4(position, 1.0);
   float fade = clamp((-mv.z - uDepth.x) / max(uDepth.y - uDepth.x, 0.001), 0.0, 1.0);
-  vColor = vec4(aColor.rgb, aColor.a * mix(1.0, 0.3, fade));
+  vColor = vec4(aColor.rgb, aColor.a * mix(1.0, 0.8, fade));
   gl_Position = projectionMatrix * mv;
 }`
 const LINHA_FS = /* glsl */ `
@@ -284,7 +284,7 @@ const C = {
 
 // ---------------------------------------------------------------- o cone
 
-export type PropsCone = { ctx: Contexto; lente: Lente; onLente: (l: Lente) => void; selecionado: string | null; onSelecionar: (id: string | null) => void; cartaoAberto: boolean }
+export type PropsCone = { ctx: Contexto; lente: Lente; onLente: (l: Lente) => void; selecionado: string | null; onSelecionar: (id: string | null) => void }
 
 export function Cone(p: PropsCone) {
   const rede = useMemo(() => montarRede(p.ctx), [p.ctx])
@@ -354,7 +354,7 @@ export function Cone(p: PropsCone) {
             onFechar={() => setAberto(null)}
           />
         )}
-        <Diretor lente={p.lente} selecionado={p.selecionado} cartaoAberto={p.cartaoAberto} chegada={chegada} aberto={aberto} />
+        <Diretor lente={p.lente} selecionado={p.selecionado} chegada={chegada} aberto={aberto} />
       </Canvas>
       <nav className="capitulos" aria-label="Lentes do cone">
         {LENTES.map((l, i) => (
@@ -409,12 +409,12 @@ function Historia({ lente, destaques, etapas, artigos, aberto, filtroAmb, onFilt
       )}
       {lente === 'ormuz' && (
         <p>
-          Parcela do Golfo, dentro do estreito e em Omã, nas compras do Brasil de março a setembro de 2025. Em {cor(COR.vermelho, 'vermelho')}, quanto mais forte, maior a parcela; em anel claro, comprado fora do Golfo. A lista ao lado compara 2025 e 2026.
+          Parcela do Golfo, dentro do estreito e em Omã, nas compras do Brasil de março a setembro de 2025. Em {cor(COR.vermelho, 'vermelho')}, quanto mais forte, maior a parcela; em anel claro, comprado fora do Golfo.
         </p>
       )}
       {lente === 'china' && (
         <p>
-          Parcela da China nas compras do Brasil de março a setembro de 2025. Em {cor(COR.ambar, 'âmbar')}, quanto mais forte, maior a parcela; em anel claro, abaixo de 5%. A lista ao lado compara 2025 e 2026.
+          Parcela da China nas compras do Brasil de março a setembro de 2025. Em {cor(COR.ambar, 'âmbar')}, quanto mais forte, maior a parcela; em anel claro, abaixo de 5%.
         </p>
       )}
       {lente === 'ambiente' && (
@@ -425,7 +425,7 @@ function Historia({ lente, destaques, etapas, artigos, aberto, filtroAmb, onFilt
           <p>
             Para fora do anel das etapas, o que cada uma solta: {cor('#5fa874', 'coprodutos')}, {cor('#cf6a4a', 'resíduos')} e {cor('#5daed2', 'efluentes')}, ligados ao destino. Os efluentes vão ao tratamento, no apoio.
           </p>
-          <p>Pulsando, os pontos de atenção, explicados ao lado.</p>
+          <p>Pulsando, os pontos de atenção: o selo LWG, o rastreio do gado, o cromo, a água e a lenha.</p>
           <div className="filtros-ambiente">
             {(['cadeia', 'sai'] as const).map((parte) => (
               <div key={parte} className="filtros-linha">
@@ -449,11 +449,6 @@ function Historia({ lente, destaques, etapas, artigos, aberto, filtroAmb, onFilt
             )}
           </div>
         </>
-      )}
-      {lente === 'confianca' && (
-        <p>
-          Como cada elo está sustentado: {cor(COR.cruClaro, 'fato')} (documento ou dado), {cor(COR.tecnico, 'fato técnico')} (literatura) e {cor(COR.vermelho, 'indício')} (fora da narrativa, a confirmar).
-        </p>
       )}
       <p className="historia-dica">Clique num ponto: o que depende dele fica {cor(COR.vermelho, 'vermelho')}, elo a elo, até os produtos.</p>
     </aside>
@@ -500,9 +495,9 @@ function Chao({ vis }: { vis: React.RefObject<{ cone: number; elo: number }> }) 
   useFrame(() => {
     // o desenho entra primeiro, em 1 s
     const k = Math.min(1, (performance.now() - t0.current) / 1000) * vis.current.cone
-    m[0].current.opacity = 0.3 * k
-    m[1].current.opacity = 0.1 * k
-    m[2].current.opacity = 0.14 * k
+    m[0].current.opacity = 0.65 * k
+    m[1].current.opacity = 0.3 * k
+    m[2].current.opacity = 0.38 * k
   })
   return (
     <>
@@ -587,7 +582,7 @@ function curva(a: THREE.Vector3, b: THREE.Vector3, out: THREE.Vector3) {
   return out
 }
 
-function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, aberto, onAbrir, filtroAmb }: PropsCone & { rede: Rede; vis: React.RefObject<{ cone: number; elo: number }>; aberto: boolean; onAbrir: (id: string) => void; filtroAmb: Set<string> }) {
+function Rede({ ctx, rede, lente, selecionado, onSelecionar, vis, aberto, onAbrir, filtroAmb }: PropsCone & { rede: Rede; vis: React.RefObject<{ cone: number; elo: number }>; aberto: boolean; onAbrir: (id: string) => void; filtroAmb: Set<string> }) {
   // na lente Ambiente, o elo está entre os destacados (nada destacado: todos estão)
   const valeAmb = (id: string) => {
     if (filtroAmb.size === 0) return true
@@ -665,24 +660,24 @@ function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, 
         if (id === viposa) return { cor: C.conhaque, alfa: 1, disco: 1 }
         if (lente === 'ambiente') {
           const destacado = filtroAmb.size > 0 && valeAmb(id)
-          if (filtroAmb.size > 0 && !destacado) return { cor: C.tinta, alfa: etapa ? 0.25 : 0.07, disco: 0.2 }
+          if (filtroAmb.size > 0 && !destacado) return { cor: C.tinta, alfa: etapa ? 0.5 : 0.26, disco: 0.25 }
           if (id === LICENCAS) return { cor: C.branco, alfa: 1, disco: 1 }
           const g = grupoAmbiente(id)
-          if (g) return { cor: new THREE.Color(g.cor), alfa: 1, disco: 0.75 }
-          if (etapa) return { cor: C.tinta, alfa: 0.5, disco: 0.2 }
-          return { cor: C.tinta, alfa: 0.12, disco: 0.3 }
+          if (g) return { cor: new THREE.Color(g.cor), alfa: 1, disco: 1 }
+          if (etapa) return { cor: C.tinta, alfa: 0.85, disco: 0.4 }
+          return { cor: C.tinta, alfa: 0.45, disco: 0.4 }
         }
         if (lente === 'estrutura') {
-          if (etapa) return { cor: C.conhaque, alfa: 0.95, disco: 0.35 }
-          if (ehArtigo.has(id)) return { cor: C.tinta, alfa: 0.85, disco: 1 }
+          if (etapa) return { cor: C.conhaque, alfa: 1, disco: 0.5 }
+          if (ehArtigo.has(id)) return { cor: C.tinta, alfa: 1, disco: 1 }
           const s = n && setorDe(n)
           const a = alcance[indice.get(id)!]
-          if (s && a >= DESTAQUE) return { cor: new THREE.Color(s.cor), alfa: 1, disco: 0.75 }
-          return { cor: C.tinta, alfa: (0.28 + 0.6 * Math.sqrt(a)) * 0.5, disco: Math.min(1, a * 3) }
+          if (s && a >= DESTAQUE) return { cor: new THREE.Color(s.cor), alfa: 1, disco: 1 }
+          return { cor: C.tinta, alfa: 0.55 + 0.45 * Math.sqrt(a), disco: Math.min(0.45, 0.15 + a * 2) }
         }
-        if (etapa || ehArtigo.has(id)) return { cor: C.tinta, alfa: 0.6, disco: 0.2 }
+        if (etapa || ehArtigo.has(id)) return { cor: C.tinta, alfa: 1, disco: 0.45 }
         const ap = aparencia(n!, lente)
-        return { cor: new THREE.Color(ap.cor), alfa: ap.opacidade, disco: ap.cheio ? 0.85 : 0 }
+        return { cor: new THREE.Color(ap.cor), alfa: 0.45 + 0.55 * ap.opacidade, disco: ap.cheio ? 0.9 : 0.3 }
       }),
     [ids, lente, alcance, filtroAmb], // eslint-disable-line react-hooks/exhaustive-deps
   )
@@ -737,7 +732,7 @@ function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, 
         c.copy(C.tinta)
         alfa = Math.max(alfa, 0.85)
         disco = Math.max(disco, 0.5)
-      } else if (q) alfa *= 0.35
+      } else if (q) alfa *= 0.6
       // os pontos de atenção da lente Ambiente pulsam
       if (lente === 'ambiente' && !q && atencao.has(id) && valeAmb(id)) (brilho = 0.45 + 0.3 * Math.sin(agora * 2.2 + i)), (tam = Math.max(tam, 10) * 1.2), (alfa = 1)
       if (id === apontado) (brilho = 1), (tam = Math.max(tam, 12) * 1.25), (alfa = 1)
@@ -769,20 +764,20 @@ function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, 
       const vivo = tu >= 0 && tw >= 0
       const f0 = vivo ? (agora - tu) / Math.max(PASSO, tw - tu) : -1
       const couro = ehEtapa.has(u) && ehEtapa.has(w)
-      let base = couro ? 0.6 - 0.35 * amb.current : 0.045
+      let base = couro ? 1 - 0.4 * amb.current : 0.2
       let cor = couro ? C.conhaque : C.tinta
       if (u === apontado || w === apontado) (base = 0.55), (cor = C.ouro)
       if (q && !couro) base *= 0.6
       // as ligações de que o escolhido é feito, em tinta
       const subida = q && (acimaSel.has(u) || u === q.de) && (acimaSel.has(w) || w === q.de)
-      if (subida) (base = 0.4), (cor = C.tinta)
+      if (subida) (base = 0.75), (cor = C.tinta)
       for (let s = 0; s < SEG; s++) {
         const f = (s + 0.5) / SEG
         let a = base
         c.copy(cor)
         if (vivo && f0 >= f) {
           c.copy(C.vermelho)
-          a = 0.35 + (f0 < f + 0.4 ? 0.45 : 0)
+          a = 0.65 + (f0 < f + 0.4 ? 0.35 : 0)
         }
         la.setXYZW(e * SEG * 2 + s * 2, c.r, c.g, c.b, a * sobe * vis.current.cone)
         la.setXYZW(e * SEG * 2 + s * 2 + 1, c.r, c.g, c.b, a * sobe * vis.current.cone)
@@ -793,7 +788,7 @@ function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, 
       const e = ligacoes.length + j
       const sd = rede.saidas.get(ehSaida(w) ? w : u)!
       c.set(COR_SAIDA[sd.tipo])
-      const a = (u === apontado || w === apontado ? 0.8 : 0.4) * amb.current * sobe * (q ? 0.4 : 1) * (valeAmb(sd.id) ? 1 : 0)
+      const a = (u === apontado || w === apontado ? 1 : 0.75) * amb.current * sobe * (q ? 0.4 : 1) * (valeAmb(sd.id) ? 1 : 0)
       for (let s = 0; s < SEG * 2; s++) la.setXYZW(e * SEG * 2 + s, c.r, c.g, c.b, a * vis.current.cone)
     })
     la.needsUpdate = true
@@ -841,7 +836,7 @@ function Rede({ ctx, rede, lente, selecionado, onSelecionar, cartaoAberto, vis, 
           onSelecionar(ids[i] === selecionado || ids[i] === viposa ? null : ids[i])
         }}
       />
-      {!aberto && <Rotulos ctx={ctx} rede={rede} lente={lente} q={q} apontado={ponteiro !== null ? ids[ponteiro] : null} selecionado={selecionado} onSelecionar={onSelecionar} cartaoAberto={cartaoAberto} onAbrir={onAbrir} filtroAmb={filtroAmb} />}
+      {!aberto && <Rotulos ctx={ctx} rede={rede} lente={lente} q={q} apontado={ponteiro !== null ? ids[ponteiro] : null} selecionado={selecionado} onSelecionar={onSelecionar} onAbrir={onAbrir} filtroAmb={filtroAmb} />}
     </group>
   )
 }
@@ -862,7 +857,7 @@ const ufs = (planta?: string) => [...new Set((planta ?? '').match(/\b(MT|MS|SC|P
  * produtos que deixariam de sair); os mais importantes do que depende dele recebem nome. O elo sob o ponteiro tem
  * sempre nome. Nomes que se cobririam ficam de fora.
  */
-function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, cartaoAberto, onAbrir, filtroAmb }: { ctx: Contexto; rede: Rede; lente: Lente; q: Queda | null; apontado: string | null; selecionado: string | null; onSelecionar: (id: string | null) => void; cartaoAberto: boolean; onAbrir: (id: string) => void; filtroAmb: Set<string> }) {
+function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, onAbrir, filtroAmb }: { ctx: Contexto; rede: Rede; lente: Lente; q: Queda | null; apontado: string | null; selecionado: string | null; onSelecionar: (id: string | null) => void; onAbrir: (id: string) => void; filtroAmb: Set<string> }) {
   const { ix } = ctx
   const no = (id: string) => ix.porId.get(id)
   const { camera, size } = useThree()
@@ -892,8 +887,7 @@ function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, car
         })
         .sort((a, b) => Number(atencao.has(b)) - Number(atencao.has(a)) || (no(b)?.alcance_cadeia ?? 0) - (no(a)?.alcance_cadeia ?? 0))
     }
-    if (lente === 'china') return ofertas.filter((n) => (n.comercio?.china_2025 ?? 0) >= 0.3).map((n) => n.id)
-    return ofertas.filter((n) => n.confianca === 'indício').map((n) => n.id)
+    return ofertas.filter((n) => (n.comercio?.china_2025 ?? 0) >= 0.3).map((n) => n.id)
   }, [lente, porAlcance, rede, filtroAmb]) // eslint-disable-line react-hooks/exhaustive-deps
 
   useFrame(() => {
@@ -912,7 +906,7 @@ function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, car
     // o que não pode ser coberto: a coluna da lente à esquerda, a ficha à direita
     const caixas: [number, number, number, number][] = [
       [0, 0, 380, size.height],
-      [size.width - (cartaoAberto ? 460 : 40), 0, size.width, size.height],
+      [size.width - 40, 0, size.width, size.height],
       [0, 0, size.width, 70],
     ]
     const fica: string[] = []
@@ -925,7 +919,7 @@ function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, car
       const nome = rotuloDe(id)
       // nome a 9,5 px e valor ao lado (o destino de uma saída é longo)
       const w = grande ? Math.max(nome.length * 10, 320) : nome.length * 6.2 + (valorDe(id)?.length ?? 0) * 6.4 + 34
-      const virar = x + w > size.width - (cartaoAberto ? 460 : 30)
+      const virar = x + w > size.width - 30
       const x0 = virar ? x - w - 24 : x
       // o rótulo grande tem nome, número e até duas linhas de nota de 300 px
       const b: [number, number, number, number] = [x0, y - (grande ? 34 : 9), x0 + w, y + (grande ? 100 : 9)]
@@ -960,7 +954,6 @@ function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, car
     if (lente === 'importado' && n.comercio) return musd(n.comercio.musd_2025)
     if (lente === 'ormuz' && n.comercio) return `Golfo ${pct(parteGolfo(n))}`
     if (lente === 'china' && n.comercio) return `China ${pct(n.comercio.china_2025)}`
-    if (lente === 'confianca') return n.confianca
     if (ehEtapa.has(id)) return null
     return pct(n.alcance_cadeia)
   }
@@ -1015,7 +1008,7 @@ function Rotulos({ ctx, rede, lente, q, apontado, selecionado, onSelecionar, car
  * A câmera: um enquadramento por lente, o cone girando devagar depois de assentar. O centro óptico fica no meio da
  * área livre (entre a coluna da lente e a ficha). Pegar os controles para o giro até a próxima lente.
  */
-function Diretor({ lente, selecionado, cartaoAberto, chegada, aberto }: { lente: Lente; selecionado: string | null; cartaoAberto: boolean; chegada: THREE.Vector3 | null; aberto: string | null }) {
+function Diretor({ lente, selecionado, chegada, aberto }: { lente: Lente; selecionado: string | null; chegada: THREE.Vector3 | null; aberto: string | null }) {
   const controls = useThree((s) => s.controls) as unknown as CameraControls | null
   const { camera, size } = useThree()
   const pego = useRef(false)
@@ -1032,11 +1025,11 @@ function Diretor({ lente, selecionado, cartaoAberto, chegada, aberto }: { lente:
     const cam = camera as THREE.PerspectiveCamera
     // a área livre: a coluna da lente à esquerda, a ficha (ou a lista da lente) à direita
     const esq = 380
-    const dir = cartaoAberto ? 460 : 40
+    const dir = 40
     const topo = 70
     const base = 70
     cam.setViewOffset(size.width, size.height, (dir - esq) / 2, (base - topo) / 2, size.width, size.height)
-    const proxima = `${lente}|${cartaoAberto}|${size.width}x${size.height}|${aberto ? 'elo' : 'cone'}`
+    const proxima = `${lente}|${size.width}x${size.height}|${aberto ? 'elo' : 'cone'}`
     if (proxima !== batida.current) {
       batida.current = proxima
       pego.current = false

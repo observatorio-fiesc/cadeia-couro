@@ -4,7 +4,7 @@ import type { Cadeia, Indice, No } from '../dados/cadeia'
 import type { IndiceProcesso, Processo } from '../dados/processo'
 import { inteiro, musd, pct, variacao } from '../lib/formato'
 
-type Props = { cadeia: Cadeia; ix: Indice; no: No; onSelecionar: (id: string | null) => void; onVerNoMapa?: () => void; processo?: Processo | null; ixp?: IndiceProcesso | null; /** no Cone 3D: só o nome, o que é, o alcance e a importação */ compacta?: boolean }
+type Props = { cadeia: Cadeia; ix: Indice; no: No; onSelecionar: (id: string | null) => void; onVerNoMapa?: () => void; processo?: Processo | null; ixp?: IndiceProcesso | null }
 
 /**
  * Em que operações do processo um elo entra: direto, se ele é entrada de alguma operação; senão, descendo
@@ -29,7 +29,7 @@ function noProcesso(cadeia: Cadeia, ix: Indice, ixp: IndiceProcesso, id: string)
   return out
 }
 
-export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp, compacta }: Props) {
+export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp }: Props) {
   const meta = cadeia.meta
   const camada = meta.camadas[no.lado]?.[String(no.camada)] ?? ''
   const tronco = meta.troncos[no.tronco] ?? no.tronco
@@ -41,9 +41,9 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp
   return (
     <aside className="ficha">
       <button className="fechar" onClick={() => onSelecionar(null)} aria-label="Fechar">×</button>
-      {!compacta && <div className="sobretitulo">{camada === tronco ? camada : `${camada} · ${tronco}`}</div>}
+      <div className="sobretitulo">{camada === tronco ? camada : `${camada} · ${tronco}`}</div>
       <h2>{no.nome}</h2>
-      {!compacta && no.planta && <div className="planta">{no.planta}</div>}
+      {no.planta && <div className="planta">{no.planta}</div>}
       {no.descricao && <p>{no.descricao}</p>}
       {no.gargalo && <p className="gargalo">{no.gargalo}</p>}
 
@@ -56,12 +56,8 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp
               {no.jusante} de {meta.base_alcance_cadeia} etapas, insumos, materiais e artigos dependem deste elo
             </span>
           </div>
-          {!compacta && (
-            <>
-              <Linha rotulo="Artigos afetados" valor={pct(no.alcance_artigos)} />
-              <Linha rotulo="Valor exportado afetado (2025)" valor={pct(no.alcance_exportacao)} />
-            </>
-          )}
+          <Linha rotulo="Artigos afetados" valor={pct(no.alcance_artigos)} />
+          <Linha rotulo="Valor exportado afetado (2025)" valor={pct(no.alcance_exportacao)} />
         </section>
       )}
 
@@ -108,13 +104,13 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp
         </section>
       )}
 
-      {!compacta && entram.length > 0 && (
+      {entram.length > 0 && (
         <section>
           <h3>{no.lado === 'demanda' ? 'Vem de' : 'Depende de'}</h3>
           <Chips ids={entram.map((a) => a.de)} ix={ix} onSelecionar={onSelecionar} marcados={new Set(entram.filter((a) => !a.essencial || a.confianca === 'indício').map((a) => a.de))} />
         </section>
       )}
-      {!compacta && processo && ixp && no.lado === 'oferta' && no.camada >= 2 && (() => {
+      {processo && ixp && no.lado === 'oferta' && no.camada >= 2 && (() => {
         const usos = noProcesso(cadeia, ix, ixp, no.id)
         if (!usos.length) return null
         // por etapa, na ordem do processo; cada operação uma vez, na cor do papel (o primeiro, se tem vários)
@@ -165,21 +161,21 @@ export function Ficha({ cadeia, ix, no, onSelecionar, onVerNoMapa, processo, ixp
           </section>
         )
       })()}
-      {!compacta && saem.length > 0 && (
+      {saem.length > 0 && (
         <section>
           <h3>Alimenta</h3>
           <Chips ids={saem.map((a) => a.para)} ix={ix} onSelecionar={onSelecionar} marcados={new Set()} />
         </section>
       )}
 
-      {!compacta && <section className="fontes">
+      <section className="fontes">
         <h3>Confiança: {no.confianca}</h3>
         <ul>
           {no.fontes.map((f) => (
             <li key={f}>{meta.fontes[f] ?? f}</li>
           ))}
         </ul>
-      </section>}
+      </section>
     </aside>
   )
 }

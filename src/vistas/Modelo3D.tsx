@@ -1,5 +1,5 @@
 // Aba Modelo 3D, em dois sistemas escolhidos no título, como no visualizador do submarino.
-// Boi e vaca: tudo sai dos animais. Dentro deles, o rúmen e o que entra nele (pasto, ração, adubos); a pele
+// Boi e vaca: tudo sai dos animais. Sob eles, um cone pequeno com o que os mantém (do solo ao rúmen); a pele
 // é a linha dupla em volta do corpo, e uma região escolhida acende no próprio lugar, com o relevo da pele
 // aberta e a química ao lado; um toque no vão da pele abre as camadas, ao lado do animal.
 // Sapato: a bota de segurança, peça a peça. Escolher é levar a câmera até lá; nada se solta nem é pintado:
@@ -10,6 +10,7 @@ import * as THREE from 'three'
 import type { Contexto } from '../dados/contexto'
 import { gerarModelo, type RegiaoId, type Sexo } from '../modelo3d/forma'
 import { gerarInterior } from '../modelo3d/interior'
+import { CURTO, MisturaCena, montarMistura, pontosDoAnel, type Nivel } from '../modelo3d/Mistura'
 import { amostra } from '../modelo3d/amostras'
 import {
   CAMADAS,
@@ -152,6 +153,7 @@ export function VistaModelo3D({ ctx, onVerNoCone }: { ctx: Contexto; onVerNoCone
 
   const quadro = useMemo(() => (regiao ? quadroPeca(modelos[sexo], sexo, regiao) : null), [modelos, sexo, regiao])
   const rumen = useMemo(() => interiores[sexo].orgaos.find((o) => o.id === 'rumen')!.centro.clone().add(CASA[sexo]), [interiores, sexo])
+  const misturas = useMemo(() => ({ boi: montarMistura(interiores.boi), vaca: montarMistura(interiores.vaca) }), [interiores])
   const pecasBota = useMemo(() => bota(), [])
   // caixas do que está em foco, para os rótulos não cobrirem: a região escolhida e cada peça da bota
   const caixaRegiao = useMemo(() => {
@@ -211,7 +213,7 @@ export function VistaModelo3D({ ctx, onVerNoCone }: { ctx: Contexto; onVerNoCone
       case 'animal':
         return focoAnimal ? olhar(CASA[sexo].clone().add(v3(0.05, 0.95, 0)), naVista(0.7, 0.55, 3.2), 3.3) : vistaGeral(w, h)
       case 'interior':
-        return olhar(rumen.clone().add(naVista(0.1, 0.05, 0)), naVista(0.55, 0.42, 1), 2.7)
+        return olhar(rumen.clone().add(naVista(0, -0.5, 0)), naVista(0.55, 0.42, 1), 3.8)
       case 'regiao':
         return quadro && regiao ? enquadrarRegiao(quadro, regiao, w, h) : CAM_GERAL
       case 'pele':
@@ -403,39 +405,79 @@ export function VistaModelo3D({ ctx, onVerNoCone }: { ctx: Contexto; onVerNoCone
           : pilula(null, 'Vaca', `pele mais leve, com mais gordura a tirar no descarne · fêmeas: ${pct(femeas.mt)} do abate em MT e ${pct(femeas.ms)} em MS em 2025 (IBGE)`),
     })
   }
-  // --- o rúmen e o que entra nele
+  // --- o cone pequeno: o rúmen no alto, o que o gado come no anel do meio, o solo no chão
   if (modo === 'interior') {
     const it = interiores[sexo]
+    const mi = misturas[sexo]
+    const presente = () => anim.current.int[sexo] > 0.6
+    const noMundo = (q: THREE.Vector3) => q.clone().add(CASA[sexo])
+    // o boi ou a vaca no Cone 3D: ali se vê, em rede, de que ele é feito e o que depende dele
+    const animalNoCone = sexo === 'boi' ? 'ins.bovinos_machos' : 'ins.bovinos_femeas'
     ORGAOS.forEach((o) => {
       const g = it.orgaos.find((x) => x.id === o.id)!
       rotulos.push({
         id: `org-${o.id}`,
         modo: 'dir',
-        pontos: () => (anim.current.int[sexo] > 0.6 ? [g.centro.clone().add(CASA[sexo])] : []),
+        pontos: () => (presente() ? [noMundo(g.centro)] : []),
         classe: 'pilula orgao selecionada',
-        conteudo: pilula(null, o.nome, o.nota),
+        conteudo: (
+          <>
+            {pilula(null, o.nome, o.nota)}
+            {onVerNoCone && ctx.ix.porId.has(animalNoCone) && (
+              <button
+                className="ver-cadeia"
+                onClick={(e) => {
+                  e.stopPropagation()
+                  onVerNoCone(animalNoCone)
+                }}
+                title={`Abre o Cone 3D com ${ctx.ix.porId.get(animalNoCone)?.nome}: a rede do que o mantém e do que depende dele`}
+              >
+                Ver no cone
+                <span className="ver-cadeia-seta" aria-hidden>
+                  →
+                </span>
+              </button>
+            )}
+          </>
+        ),
       })
     })
-    const centroDe = (id: string) => {
-      if (id === 'pasto') return it.rumen.c.clone().add(v3(-0.12, 0.08, 0.08))
-      const g = [...it.graos, ...it.adubos].find((x) => x.id === id)
-      if (!g) return it.rumen.c.clone()
-      const c = v3()
-      for (let i = 0; i < g.pos.length; i += 3) c.add(v3(g.pos[i], g.pos[i + 1], g.pos[i + 2]))
-      return c.multiplyScalar(3 / g.pos.length)
-    }
-    INSUMOS_ANIMAL.forEach((ins) => {
-      const c = centroDe(ins.id)
+    // o nome de cada nível, na borda esquerda do anel, como as alturas do Cone 3D
+    const NOME_NIVEL: Record<Nivel, string> = { solo: 'No solo', cocho: 'No pasto e no cocho' }
+    ;(['solo', 'cocho'] as Nivel[]).forEach((nv) => {
+      const anel = pontosDoAnel(mi, nv).map(noMundo)
+      rotulos.push({
+        id: `nivel-${nv}`,
+        modo: 'marca',
+        lado: 'esq',
+        dx: -16,
+        pontos: (cam) => {
+          if (!presente()) return []
+          let melhor = anel[0]
+          let x0 = Infinity
+          for (const q of anel) {
+            const x = q.clone().project(cam).x
+            if (x < x0) (x0 = x), (melhor = q)
+          }
+          return [melhor]
+        },
+        classe: 'nivel-mistura',
+        conteudo: <span>{NOME_NIVEL[nv]}</span>,
+      })
+    })
+    mi.marcas.forEach((mc) => {
+      const ins = INSUMOS_ANIMAL.find((x) => x.id === mc.id)!
       const ativo = (hover?.tipo === 'insumo' && hover.id === ins.id) || insumo === ins.id
       rotulos.push({
         id: `ins-${ins.id}`,
-        modo: 'esq',
-        pontos: () => (anim.current.int[sexo] > 0.6 ? [c.clone().add(CASA[sexo])] : []),
-        classe: `insumo${ativo ? ' hover' : ''}${ins.grupo === 'adubo' ? ' adubo' : ''}${insumo && insumo !== ins.id ? ' apagado' : ''}`,
+        modo: 'marca',
+        lado: mc.lado,
+        pontos: () => (presente() ? [noMundo(mc.p)] : []),
+        classe: `insumo${mc.lado === 'esq' ? ' esq' : ''}${ativo ? ' hover' : ''}${ins.grupo === 'adubo' ? ' adubo' : ''}${insumo && insumo !== ins.id ? ' apagado' : ''}`,
         conteudo: (
           <span onMouseEnter={() => setHover({ tipo: 'insumo', id: ins.id })} onMouseLeave={() => setHover(null)} onClick={() => irFilho('interior', ins.id)}>
             <i style={ins.grupo === 'adubo' ? { borderColor: lente === 'dependencia' ? COR_DEP[ins.dep] : PALETA.tinta2 } : { background: corDe(ins.cor, ins.dep) }} />
-            <b>{ins.nome}</b>
+            <b>{ativo ? ins.nome : CURTO[ins.id]}</b>
             {lente === 'dependencia' && !ativo && <small>{NOME_DEP[ins.dep]}</small>}
             {ativo && <small>{lente === 'dependencia' ? ins.depNota : ins.nota}</small>}
             {insumo === ins.id && verNaCadeia()}
@@ -634,13 +676,13 @@ export function VistaModelo3D({ ctx, onVerNoCone }: { ctx: Contexto; onVerNoCone
               it={interiores[s]}
               sexo={s}
               anim={anim}
-              lente={lente}
               ativo={modo === 'interior' && s === sexo}
               orgao={null}
               hover={insumo && !hover ? { tipo: 'insumo', id: insumo } : hover}
               onHover={setHover}
               onOrgao={() => undefined}
             />
+            <MisturaCena it={interiores[s]} sexo={s} anim={anim} foco={s === sexo ? insumo ?? (hover?.tipo === 'insumo' ? hover.id : null) : null} />
             <AnimalCena
               m={modelos[s]}
               sexo={s}

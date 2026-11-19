@@ -58,6 +58,7 @@ export type Hover =
   | null
 export const mesmoHover = (a: Hover, b: Hover) => JSON.stringify(a) === JSON.stringify(b)
 
-export type ModoRotulo = 'perto' | 'esq' | 'dir' | 'legenda' | 'baixo' | 'painel'
-export type Alvo = { id: string; modo: ModoRotulo; pontos: (cam: THREE.Camera) => THREE.Vector3[]; dx?: number; dy?: number }
+// marca: o nome junto do próprio ponto, sem linha (o ponto do rótulo é a marca); lado diz para onde o nome cresce
+export type ModoRotulo = 'perto' | 'esq' | 'dir' | 'legenda' | 'baixo' | 'painel' | 'marca'
+export type Alvo = { id: string; modo: ModoRotulo; pontos: (cam: THREE.Camera) => THREE.Vector3[]; dx?: number; dy?: number; lado?: 'esq' | 'dir' }
 export type Rotulo = Alvo & { conteudo: ReactNode; classe?: string }

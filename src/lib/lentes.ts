@@ -3,14 +3,13 @@
 
 import type { No } from '../dados/cadeia'
 
-export type Lente = 'estrutura' | 'importado' | 'ormuz' | 'china' | 'confianca' | 'ambiente'
+export type Lente = 'estrutura' | 'importado' | 'ormuz' | 'china' | 'ambiente'
 
 export const LENTES: { chave: Lente; rotulo: string }[] = [
   { chave: 'estrutura', rotulo: 'Estrutura' },
   { chave: 'importado', rotulo: 'Importado' },
   { chave: 'ormuz', rotulo: 'Ormuz 2026' },
   { chave: 'china', rotulo: 'China' },
-  { chave: 'confianca', rotulo: 'Confiança' },
   { chave: 'ambiente', rotulo: 'Ambiente' },
 ]
 
@@ -21,7 +20,6 @@ export const COR = {
   conhaque: '#d0843f',
   vermelho: '#e5553f',
   ambar: '#e9b24a',
-  tecnico: '#b4a690',
 }
 
 export const parteGolfo = (n: No) => {
@@ -52,10 +50,6 @@ export function aparencia(n: No, lente: Lente): { cor: string; opacidade: number
       if (c < 0.05) return { cor: COR.cru, opacidade: 0.55, cheio: false }
       return { cor: COR.ambar, opacidade: 0.45 + 0.55 * Math.min(1, c / 0.7), cheio: true }
     }
-    case 'confianca':
-      if (n.confianca === 'indício') return { cor: COR.vermelho, opacidade: 0.95, cheio: true }
-      if (n.confianca === 'fato técnico') return { cor: COR.tecnico, opacidade: 0.7, cheio: false }
-      return { cor: COR.cruClaro, opacidade: 0.95, cheio: true }
     default:
       return { cor: COR.cru, opacidade: 0.85, cheio: n.camada === 1 }
   }

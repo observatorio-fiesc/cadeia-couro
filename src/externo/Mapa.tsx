@@ -45,21 +45,6 @@ export type Carga = {
   velocidade?: number
   tamanho?: number
 }
-/** A treliça dos preços no tempo, flutuando sobre um lugar (como a de Custos): cada série uma fila de pontos. */
-export type Trelica = {
-  em: LonLat
-  altura: number
-  largura: number
-  alto: number
-  fundo: number
-  anos: string[]
-  series: { id: string; nome: string; v: (number | null)[]; tom: Tom; forte?: boolean; rotulo?: string }[]
-  /** índice do último dado (a linha fixa) e o seu nome */
-  ultimo: number
-  marca: string
-  /** rótulos sob o eixo: [índice, texto] */
-  eixo: [number, string][]
-}
 export type Enquadre = {
   pontos: LonLat[]
   /** de onde a câmera olha, como direção do alvo ao olho (x leste, y para cima, z sul) */
@@ -85,7 +70,6 @@ export type Cena = {
   /** altura de uma peça cheia, em unidades do chão */
   alturaPeca?: number
   carga?: Carga
-  trelica?: Trelica
   /** o que o ponteiro diz de um país, em linhas */
   dica?: (iso: string) => string[] | null
 }
@@ -133,7 +117,6 @@ export function MapaExterno({ dados, cena, densidade, margens, chave }: { dados:
         {cena.marcas?.map((m) => <Anel key={`${chave}|${m.id}`} m={m} />)}
         <Pecas pecas={cena.pecas ?? []} alto={cena.alturaPeca ?? 1.2} />
         {cena.carga && <CargaCena key={chave} carga={cena.carga} />}
-        {cena.trelica && <TrelicaCena key={`${chave}|${cena.trelica.series.length}`} tr={cena.trelica} />}
         <Rotulos rotulos={cena.rotulos} chave={chave} />
         <Ponteiro
           mundo={dados.mundo}
@@ -1034,174 +1017,6 @@ function Corte({ de, ate, fechaEm }: { de: LonLat; ate: LonLat; fechaEm: number 
       <lineBasicMaterial ref={mat} color={COR.perda} transparent opacity={0} depthWrite={false} defines={DEF_CURVA} />
     </lineSegments>
   )
-}
-
-/* ---------- a treliça dos preços: os anos ao longo, um anel que varre o tempo e acende o que passa ---------- */
-
-const VARRE = 6.5
-const PAUSA = 3.5
-
-function TrelicaCena({ tr }: { tr: Trelica }) {
-  const { gl } = useThree()
-  const base = useMemo(() => ponto(tr.em[0], tr.em[1], tr.altura), [tr])
-  const n = tr.anos.length
-  const todos = tr.series.flatMap((s) => s.v.filter((v): v is number => v !== null && v > 0))
-  const lo = Math.log(Math.min(...todos))
-  const hi = Math.log(Math.max(...todos))
-  const X = (i: number) => -tr.largura / 2 + (i / (n - 1)) * tr.largura
-  const Y = (v: number) => ((Math.log(v) - lo) / (hi - lo || 1)) * tr.alto
-  const Z = (k: number) => (tr.series.length < 2 ? 0 : -tr.fundo / 2 + (k / (tr.series.length - 1)) * tr.fundo)
-  const pts = useMemo(
-    () =>
-      tr.series.flatMap((s, k) =>
-        s.v.map((v, i) => (v !== null && v > 0 ? { k, i, p: new THREE.Vector3(X(i), Y(v), Z(k)), s, v } : null)).filter((x): x is NonNullable<typeof x> => x !== null),
-      ),
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-    [tr],
-  )
-  const geo = useMemo(() => {
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(pts.flatMap((q) => q.p.toArray()), 3))
-    g.setAttribute('aCor', new THREE.Float32BufferAttribute(new Float32Array(pts.length * 4), 4))
-    return g
-  }, [pts])
-  const [linhas, forte] = useMemo(() => {
-    const seg: number[] = []
-    const segF: number[] = []
-    tr.series.forEach((s, k) => {
-      const alvo = s.forte ? segF : seg
-      let ant: THREE.Vector3 | null = null
-      s.v.forEach((v, i) => {
-        if (v === null || v <= 0) return
-        const p = new THREE.Vector3(X(i), Y(v), Z(k))
-        if (ant) alvo.push(...ant.toArray(), ...p.toArray())
-        ant = p
-      })
-    })
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3))
-    const f = new THREE.BufferGeometry()
-    f.setAttribute('position', new THREE.Float32BufferAttribute(segF, 3))
-    return [g, f]
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tr])
-  const eixo = useMemo(() => {
-    const y = -0.06
-    const seg: number[] = [X(0), y, tr.fundo / 2 + 0.05, X(n - 1), y, tr.fundo / 2 + 0.05]
-    for (const [i] of tr.eixo) seg.push(X(i), y, tr.fundo / 2 + 0.05, X(i), y - 0.05, tr.fundo / 2 + 0.05)
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3))
-    return g
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [tr])
-  const elipse = useMemo(() => {
-    const seg: number[] = []
-    const N = 72
-    for (let j = 0; j < N; j += 2) {
-      const a0 = (j / N) * Math.PI * 2
-      const a1 = ((j + 1) / N) * Math.PI * 2
-      seg.push(0, tr.alto / 2 + Math.sin(a0) * (tr.alto * 0.62), Math.cos(a0) * (tr.fundo * 0.62 + 0.05), 0, tr.alto / 2 + Math.sin(a1) * (tr.alto * 0.62), Math.cos(a1) * (tr.fundo * 0.62 + 0.05))
-    }
-    const g = new THREE.BufferGeometry()
-    g.setAttribute('position', new THREE.Float32BufferAttribute(seg, 3))
-    return g
-  }, [tr])
-  const mat = useMemo(
-    () =>
-      new THREE.ShaderMaterial({
-        defines: DEF_CURVA,
-        vertexShader: VS_PONTOS,
-        fragmentShader: FS_PONTOS,
-        uniforms: { uTam: { value: 7 }, uDpr: { value: 1 } },
-        transparent: true,
-        depthWrite: false,
-      }),
-    [],
-  )
-  useEffect(
-    () => () => {
-      geo.dispose()
-      linhas.dispose()
-      forte.dispose()
-      eixo.dispose()
-      elipse.dispose()
-      mat.dispose()
-    },
-    [geo, linhas, forte, eixo, elipse, mat],
-  )
-  const anel = useRef<THREE.LineSegments>(null)
-  const c = useMemo(() => new THREE.Color(), [])
-  const [rotulos, setRotulos] = useState(false)
-  useFrame(() => {
-    mat.uniforms.uDpr.value = gl.getPixelRatio()
-    const t = tempo()
-    const ciclo = (t - 0.8) % (VARRE + PAUSA)
-    const f = t < 0.8 ? 0 : Math.min(1, ciclo / VARRE)
-    const xs = X(0) + f * (X(n - 1) - X(0))
-    if (anel.current) {
-      anel.current.position.x = xs
-      anel.current.visible = t > 0.8 && ciclo < VARRE
-    }
-    const cor = geo.getAttribute('aCor') as THREE.BufferAttribute
-    pts.forEach((q, j) => {
-      const aceso = t > 0.8 && q.p.x <= xs + 0.001
-      c.set(COR[q.s.tom])
-      const forte = q.s.forte ? 1 : 0.55
-      cor.setXYZW(j, c.r, c.g, c.b, (aceso ? 0.95 : 0.12) * forte)
-    })
-    cor.needsUpdate = true
-    if (!rotulos && t > 1.6) setRotulos(true)
-  })
-  return (
-    <group position={base}>
-      <lineSegments geometry={linhas} frustumCulled={false} renderOrder={9}>
-        <lineBasicMaterial color={TINTA} transparent opacity={0.06} depthWrite={false} defines={DEF_CURVA} />
-      </lineSegments>
-      <lineSegments geometry={forte} frustumCulled={false} renderOrder={9}>
-        <lineBasicMaterial color={COR.couro} transparent opacity={0.7} depthWrite={false} defines={DEF_CURVA} />
-      </lineSegments>
-      <points geometry={geo} material={mat} frustumCulled={false} renderOrder={10} />
-      <lineSegments geometry={eixo} frustumCulled={false} renderOrder={9}>
-        <lineBasicMaterial color={TINTA} transparent opacity={0.55} depthWrite={false} defines={DEF_CURVA} />
-      </lineSegments>
-      <lineSegments geometry={elipse} position={[X(tr.ultimo), 0, 0]} frustumCulled={false} renderOrder={9}>
-        <lineBasicMaterial color={TINTA} transparent opacity={0.5} depthWrite={false} defines={DEF_CURVA} />
-      </lineSegments>
-      <lineSegments ref={anel} geometry={elipse} frustumCulled={false} renderOrder={9}>
-        <lineBasicMaterial color={COR.couro} transparent opacity={0.65} depthWrite={false} defines={DEF_CURVA} />
-      </lineSegments>
-      {rotulos && (
-        <>
-          <Html position={[X(tr.ultimo), tr.alto / 2 + tr.alto * 0.62 + 0.05, 0]} center calculatePosition={htmlCurvo} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
-            <span className="ext-trelica-marca">{tr.marca}</span>
-          </Html>
-          {tr.eixo.map(([i, txt]) => (
-            <Html key={i} position={[X(i), -0.16, tr.fundo / 2 + 0.05]} center calculatePosition={htmlCurvo} zIndexRange={[6, 0]} style={{ pointerEvents: 'none' }}>
-              <span className="ext-trelica-ano">{txt}</span>
-            </Html>
-          ))}
-          {rotulosTrelica(tr, X, Y).map(({ s, pos }) => (
-            <Html key={s.id} position={pos} calculatePosition={htmlCurvo} zIndexRange={[7, 0]} style={{ pointerEvents: 'none' }}>
-              <span className={`ext-trelica-nome tom-${s.tom}`}>{s.rotulo}</span>
-            </Html>
-          ))}
-        </>
-      )}
-    </group>
-  )
-}
-
-/** Os nomes da treliça, cada um no último ponto da sua série, afastados na altura quando ficam perto demais. */
-function rotulosTrelica(tr: Trelica, X: (i: number) => number, Y: (v: number) => number) {
-  const lista = tr.series
-    .map((s, k) => ({ s, k, u: s.v.map((v, i) => (v !== null && v > 0 ? i : -1)).filter((i) => i >= 0).pop() }))
-    .filter((x): x is { s: Trelica['series'][number]; k: number; u: number } => !!x.s.rotulo && x.u !== undefined)
-    .map((x) => ({ ...x, y: Y(x.s.v[x.u]!) }))
-    .sort((a, b) => a.y - b.y)
-  // os nomes ficam na frente da treliça, numa coluna depois do último ano, um abaixo do outro
-  const vao = tr.alto * 0.13
-  for (let i = 1; i < lista.length; i++) if (lista[i].y - lista[i - 1].y < vao) lista[i].y = lista[i - 1].y + vao
-  return lista.map((x) => ({ s: x.s, pos: [X(tr.anos.length - 1) + 0.12, x.y, tr.fundo / 2 + 0.05] as [number, number, number] }))
 }
 
 /* ---------- rótulos: escritos sobre o mapa e afastados uns dos outros na tela ---------- */

@@ -331,25 +331,68 @@
   border-radius: 50%;
 }
 
-/* interior: o que o animal come e os adubos */
+/* o cone pequeno: cada item é a própria marca no anel, com o nome ao lado (o ponto do rótulo é o centro dela) */
 .insumo > span {
   display: grid;
   grid-template-columns: 10px auto;
   column-gap: 7px;
-  align-items: baseline;
+  align-items: center;
   font-size: 10.5px;
   white-space: nowrap;
   pointer-events: auto;
-  cursor: default;
+  cursor: pointer;
 }
 .insumo i {
-  width: 8px;
-  height: 8px;
+  width: 10px;
+  height: 10px;
   border-radius: 50%;
+  box-shadow: 0 0 0 3px var(--fundo);
+  transition: transform 0.2s;
+}
+.insumo.hover i {
+  transform: scale(1.35);
 }
 .insumo b {
+  line-height: 14px;
   font-weight: 500;
   letter-spacing: 0.04em;
+}
+.insumo .ver-cadeia {
+  grid-column: 2;
+  justify-self: start;
+}
+/* à esquerda do eixo, o nome cresce para a esquerda e a marca fica no fim */
+.insumo.esq > span {
+  grid-template-columns: auto 10px;
+  text-align: right;
+}
+.insumo.esq i {
+  grid-column: 2;
+  grid-row: 1;
+}
+.insumo.esq b {
+  grid-column: 1;
+  grid-row: 1;
+}
+.insumo.esq small {
+  grid-column: 1;
+  justify-self: end;
+}
+.insumo.esq .ver-cadeia {
+  grid-column: 1;
+  justify-self: end;
+}
+/* o nome de cada nível do cone pequeno, como as alturas do Cone 3D */
+.nivel-mistura span {
+  display: inline-block;
+  padding-right: 8px;
+  font-size: 9.5px;
+  line-height: 14px;
+  letter-spacing: 0.18em;
+  text-transform: uppercase;
+  color: rgba(234, 223, 203, 0.85);
+  border-right: 1px solid var(--traco-2);
+  white-space: nowrap;
 }
 .insumo small {
   grid-column: 2;

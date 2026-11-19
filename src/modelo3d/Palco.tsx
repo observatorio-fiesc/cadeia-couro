@@ -225,6 +225,7 @@ export function Projetor({
     const telas: Ret[] = []
     const base = gl.domElement.getBoundingClientRect()
     document.querySelectorAll<HTMLElement>('.ver-cadeia, .controles').forEach((el) => {
+      if (el.closest('.rot')) return
       const b = el.getBoundingClientRect()
       telas.push({ x0: b.left - base.left - 8, y0: b.top - base.top - 8, x1: b.right - base.left + 8, y1: b.bottom - base.top + 8 })
     })
@@ -269,6 +270,9 @@ export function Projetor({
         ly = ay
       } else if (al.modo === 'legenda') {
         lx = ax + (al.dx ?? 26)
+      } else if (al.modo === 'marca') {
+        // o centro da marca (a primeira ou a última coisa do rótulo) cai no ponto
+        lx = ax + (al.dx ?? (al.lado === 'esq' ? 5 : -5))
       } else if (al.modo === 'baixo') {
         lx = ax + (al.dx ?? 0)
         ly = ay + (al.dy ?? 30)
@@ -284,6 +288,7 @@ export function Projetor({
       if (m === 'esq') return { x0: r.lx - r.w, x1: r.lx, y0: r.ly - r.h / 2, y1: r.ly + r.h / 2 }
       if (m === 'perto') return { x0: r.lx, x1: r.lx + r.w, y0: r.ly - r.h, y1: r.ly }
       if (m === 'baixo') return { x0: r.lx - r.w / 2, x1: r.lx + r.w / 2, y0: r.ly, y1: r.ly + r.h }
+      if (m === 'marca' && r.al.lado === 'esq') return { x0: r.lx - r.w, x1: r.lx, y0: r.ly - 7, y1: r.ly - 7 + r.h }
       return { x0: r.lx, x1: r.lx + r.w, y0: r.ly - r.h / 2, y1: r.ly + r.h / 2 }
     }
     // colunas: os rótulos da esquerda e da direita se alinham, como as chamadas de um desenho técnico,
@@ -365,8 +370,9 @@ export function Projetor({
     for (const r of rs) {
       const { al, el } = r
       const md = r.m
-      const tx = md === 'esq' ? '-100%' : md === 'baixo' ? '-50%' : '0px'
-      const ty = md === 'perto' ? '-100%' : md === 'baixo' ? '0px' : '-50%'
+      const tx = md === 'esq' || (md === 'marca' && al.lado === 'esq') ? '-100%' : md === 'baixo' ? '-50%' : '0px'
+      // marca: o meio da primeira linha (14 px) na altura do ponto, mesmo quando o rótulo cresce para baixo
+      const ty = md === 'perto' ? '-100%' : md === 'baixo' ? '0px' : md === 'marca' ? '-7px' : '-50%'
       el.style.opacity = '1'
       el.style.pointerEvents = ''
       el.style.transform = `translate(${r.lx.toFixed(1)}px, ${r.ly.toFixed(1)}px) translate(${tx}, ${ty})`

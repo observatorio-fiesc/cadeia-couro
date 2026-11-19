@@ -194,6 +194,21 @@ export const INSUMOS_ANIMAL: Insumo[] = [
   { id: 'adubo_k', nome: 'Adubo potássico: cloreto de potássio', grupo: 'adubo', cor: PALETA.apagado, dep: 'sim', depNota: '13,7 milhões de t importadas em 2025', nota: 'aduba o pasto, o milho e a soja' },
   { id: 'calcario', nome: 'Calcário: corrige o solo', grupo: 'adubo', cor: PALETA.apagado, dep: 'nao', depNota: 'calcário de jazidas nacionais', nota: 'corrige a acidez do solo do pasto' },
 ]
+/** O que alimenta o quê, pelas arestas da cadeia (cadeia.json): ureia, MAP, DAP, cloreto de potássio e
+ *  calcário → pastagem; os adubos → milho e soja → ração; ureia → ração; pastagem, ração e sal mineral → bovinos. */
+export const ALIMENTA: [string, string][] = [
+  ['calcario', 'pasto'],
+  ['adubo_n', 'pasto'],
+  ['adubo_n', 'racao'],
+  ['adubo_p', 'pasto'],
+  ['adubo_p', 'racao'],
+  ['adubo_k', 'pasto'],
+  ['adubo_k', 'racao'],
+  ['ureia', 'racao'],
+  ['pasto', 'rumen'],
+  ['racao', 'rumen'],
+  ['sal_mineral', 'rumen'],
+]
 
 // ---------------------------------------------------------------- sistemas e etapas (quadro de decomposição)
 // Dois sistemas, escolhidos no título, como no visualizador do submarino: o boi e a vaca, de onde tudo

@@ -5,7 +5,7 @@
 // - à esquerda, a folha da passada (um número e uma linha); acima da faixa, quando há, um infográfico sutil;
 // - embaixo, no meio, Exportações ou Importações: um toque abre a outra;
 // - no canto inferior direito, o quadro dos produtos (os estágios do couro; os insumos importados).
-// O mapa (src/externo/Mapa.tsx) leva a câmera a cada passada; nas passadas em vídeo, os anos correm sozinhos.
+// O mapa (src/externo/Mapa.tsx) leva a câmera a cada passada. Cada passada mostra um ano só: o último.
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { carregarExterno, ESTAGIOS, GRUPOS_INSUMO, type DadosExterno } from '../externo/dados'
 import { MapaExterno, type Margens } from '../externo/Mapa'
@@ -13,10 +13,6 @@ import { ANALISES, NOME_LADO, NOME_SENTIDO, PRODUTO_INICIAL, type Analise, type 
 import { Figura, Folha, Infografico } from '../externo/Folha'
 import { BotaoFaixa, Menu, NaFaixa } from '../componentes/Faixa'
 import '../externo/externo.css'
-
-/** Quanto dura cada ano no vídeo, e quantos anos o último fica parado antes de recomeçar. */
-const ANO_MS = 1150
-const PARADO = 3
 
 export function VistaExterno() {
   const [d, setD] = useState<DadosExterno | null>(null)
@@ -46,6 +42,8 @@ function Externo({ d }: { d: DadosExterno }) {
   const [ia, setIa] = useState(() => Math.max(0, lista.findIndex((a) => a.chave === params.get('analise'))))
   const [ip, setIp] = useState(() => Math.max(0, Number(params.get('passo') ?? 0) || 0))
   const [produto, setProduto] = useState(() => params.get('produto') ?? PRODUTO_INICIAL[sentido])
+  // o item escolhido na lista própria da passada (Mercados potenciais: a região); null mostra todos
+  const [escolha, setEscolha] = useState<string | null>(() => params.get('escolha'))
   const [tocando, setTocando] = useState(false)
   const [densidade, setDensidade] = useState(false)
   const [caixa, setCaixa] = useState(true)
@@ -53,7 +51,15 @@ function Externo({ d }: { d: DadosExterno }) {
 
   const analise = lista[Math.min(ia, lista.length - 1)]
   const passo = analise.passos[Math.min(ip, analise.passos.length - 1)]
-  const chave = `${sentido}|${analise.chave}|${passo.chave}|${passo.produto ? produto : ''}`
+  const lugar = `${sentido}|${analise.chave}|${passo.chave}`
+  // outra passada: a lista própria volta a mostrar todos
+  const lugarAntes = useRef(lugar)
+  useEffect(() => {
+    if (lugarAntes.current !== lugar) setEscolha(null)
+    lugarAntes.current = lugar
+  }, [lugar])
+  const escolhida = passo.escolhas?.itens.some((x) => x.chave === escolha) ? escolha : null
+  const chave = `${lugar}|${passo.produto ? produto : ''}|${escolhida ?? ''}`
 
   // a sequência inteira, para o "→ próxima" e para tocar sozinha
   const seq = useMemo(() => lista.flatMap((a, ai) => a.passos.map((p, pi) => ({ ai, pi, nome: p.nome, analise: a.nome }))), [lista])
@@ -66,18 +72,8 @@ function Externo({ d }: { d: DadosExterno }) {
   // as análises do lado escolhido (Oferta ou Demanda), com o índice de cada uma na lista inteira
   const doLado = lista.map((a, ai) => ({ a, ai })).filter((x) => x.a.lado === analise.lado)
 
-  // os anos do vídeo: correm do primeiro ao último, param um pouco no último e recomeçam
-  const faixa = passo.video?.({ d, produto }) ?? null
-  const [quadro, setQuadro] = useState(0)
-  useEffect(() => setQuadro(0), [chave])
-  useEffect(() => {
-    if (!faixa) return
-    const total = faixa[1] - faixa[0] + 1 + PARADO
-    const t = window.setInterval(() => setQuadro((q) => (q + 1) % total), ANO_MS)
-    return () => window.clearInterval(t)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [chave, faixa?.[0], faixa?.[1]])
-  const i = faixa ? Math.min(faixa[0] + quadro, faixa[1]) : 10
+  // só o último ano: 2025 (índice 10), ou o que a passada disser (o último declarado no Comtrade, por exemplo)
+  const i = passo.ano?.({ d, produto }) ?? 10
 
   // tocar: uma passada depois da outra, até o fim da lista, e recomeça
   useEffect(() => {
@@ -114,11 +110,13 @@ function Externo({ d }: { d: DadosExterno }) {
       q.set('analise', analise.chave)
       q.set('passo', String(Math.min(ip, analise.passos.length - 1)))
       q.set('produto', produto)
+      if (escolhida) q.set('escolha', escolhida)
+      else q.delete('escolha')
       history.replaceState(null, '', `?${q.toString()}${window.location.hash}`)
     } catch {
       /* o quadro do site pode recusar; o estado continua valendo na página */
     }
-  }, [sentido, analise, ip, produto])
+  }, [sentido, analise, ip, produto, escolhida])
 
   const trocarSentido = (s: Sentido) => {
     if (s === sentido) return
@@ -128,7 +126,7 @@ function Externo({ d }: { d: DadosExterno }) {
     setProduto(PRODUTO_INICIAL[s])
   }
 
-  const ctx = { d, produto, i }
+  const ctx = { d, produto, i, escolha: escolhida }
   const cena = passo.cena(ctx)
   const folha = passo.folha(ctx)
   const info = passo.info?.(ctx) ?? null
@@ -137,7 +135,7 @@ function Externo({ d }: { d: DadosExterno }) {
   const estreita = tela.w < 900
   const margens: Margens = estreita
     ? { esq: 0, dir: 0, topo: 230, base: 130 }
-    : { esq: Math.min(300, tela.w * 0.19), dir: caixa && cena.trelica ? 300 : caixa ? 110 : 40, topo: 92, base: 86 }
+    : { esq: Math.min(300, tela.w * 0.19), dir: caixa ? 110 : 40, topo: 92, base: 86 }
 
   return (
     <div className={`externo${cena.apagar ? ' apagado' : ''}`}>
@@ -156,18 +154,11 @@ function Externo({ d }: { d: DadosExterno }) {
       )}
       {figura && <Figura chave={chave}>{figura}</Figura>}
 
-      {faixa && (
-        <div className="ext-ano-video" aria-live="off">
-          <b key={i}>{passo.ano ? passo.ano(i) : d.anos[i]}</b>
-          <i style={{ width: `${((i - faixa[0]) / Math.max(1, faixa[1] - faixa[0])) * 100}%` }} />
-        </div>
-      )}
-
       <SeletorSentido sentido={sentido} onTrocar={trocarSentido} />
 
-      <section className={`painel ext-quadro${caixa ? '' : ' recolhido'}${passo.produto ? '' : ' inativo'}`} aria-hidden={!caixa} aria-label="Produto">
+      <section className={`painel ext-quadro${caixa ? '' : ' recolhido'}${passo.produto || passo.escolhas ? '' : ' inativo'}`} aria-hidden={!caixa} aria-label={passo.escolhas?.titulo ?? 'Produto'}>
         <header className="painel-cabeca">
-          <span>Produto</span>
+          <span>{passo.escolhas?.titulo ?? 'Produto'}</span>
           <button className="painel-recolher" onClick={() => setCaixa(false)} title="Recolher (])" aria-label="Recolher o quadro dos produtos">
             ›
           </button>
@@ -198,12 +189,29 @@ function Externo({ d }: { d: DadosExterno }) {
               ])}
         </ul>
         )}
-        {!passo.produto && <p className="ext-produtos-nota">esta passada olha a cadeia inteira</p>}
+        {passo.escolhas && (
+          <ul className="ext-produtos ext-escolhas">
+            <li>
+              <button className={escolhida === null ? 'ativo' : ''} aria-pressed={escolhida === null} onClick={() => setEscolha(null)}>
+                {passo.escolhas.todos}
+              </button>
+            </li>
+            {passo.escolhas.itens.map((x) => (
+              <li key={x.chave}>
+                <button className={escolhida === x.chave ? 'ativo' : ''} aria-pressed={escolhida === x.chave} onClick={() => setEscolha((v) => (v === x.chave ? null : x.chave))}>
+                  {x.nome}
+                </button>
+                {escolhida === x.chave && x.nota && <p className="ext-escolha-nota">{x.nota}</p>}
+              </li>
+            ))}
+          </ul>
+        )}
+        {!passo.produto && !passo.escolhas && <p className="ext-produtos-nota">esta passada olha a cadeia inteira</p>}
       </section>
       {!caixa && (
         <button className="painel-aba direita" onClick={() => setCaixa(true)} title="Mostrar os produtos (])" aria-label="Mostrar os produtos">
           <span className="painel-aba-seta">‹</span>
-          <span className="painel-aba-nome">Produto</span>
+          <span className="painel-aba-nome">{passo.escolhas?.titulo ?? 'Produto'}</span>
         </button>
       )}
 

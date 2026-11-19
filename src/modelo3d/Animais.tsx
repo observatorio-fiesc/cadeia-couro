@@ -1,17 +1,17 @@
-// Os animais na cena e tudo o que sai deles: o chão, o boi e a vaca em traço, o rúmen com o que entra
-// nele, a região da pele escolhida, no próprio lugar, em curvas de nível, e a pilha de camadas da pele,
-// ao lado do animal.
+// Os animais na cena e tudo o que sai deles: o chão, o boi e a vaca em traço, os órgãos por dentro (o que
+// os mantém fica no cone pequeno, Mistura.tsx), a região da pele escolhida, no próprio lugar, em curvas de
+// nível, e a pilha de camadas da pele, ao lado do animal.
 import { useEffect, useMemo, useRef, type MutableRefObject } from 'react'
 import { useFrame, type ThreeEvent } from '@react-three/fiber'
 import * as THREE from 'three'
 import { REGIAO_IDX, type Modelo, type RegiaoId, type Sexo } from './forma'
 import type { Interior } from './interior'
 import { matContorno, matGrade, matPreparo, matTopo } from './materiais'
-import { CAMADAS, COR_DEP, INSUMOS_ANIMAL, ORGAOS, PALETA, regiaoPorId, type Modo } from './receitas'
+import { CAMADAS, ORGAOS, PALETA, regiaoPorId, type Modo } from './receitas'
 import { bloco, folha, type CamadaGeo } from './camadas3d'
 import { BRANCO, LARG, RECUO_ITEM, TAXA_FADE, TAXA_LINHAS, TAXA_LINHAS_SAI, clamp01, expo, flui, focoDe, traco, useFocos, useResolucao, v3 } from './cena'
 import { CASA, GIRO_VISTA, MEIO_CAMADA, lugarPilha } from './lugares'
-import type { Anim, Hover, Lente } from './estado'
+import type { Anim, Hover } from './estado'
 
 const SEXOS: Sexo[] = ['boi', 'vaca']
 
@@ -198,8 +198,8 @@ export function AnimalCena(p: PropsAnimal) {
   )
 }
 
-// por dentro: órgãos tracejados, o que o animal come (no rúmen) e os adubos por trás
-export function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObject<Anim>; lente: Lente; ativo: boolean; orgao: string | null; hover: Hover; onHover: (h: Hover) => void; onOrgao: (id: string) => void }) {
+// por dentro: os órgãos tracejados (o que o animal come fica no cone pequeno, Mistura.tsx)
+export function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObject<Anim>; ativo: boolean; orgao: string | null; hover: Hover; onHover: (h: Hover) => void; onOrgao: (id: string) => void }) {
   const { it, sexo, anim } = p
   const obj = useMemo(() => {
     const orgaos = it.orgaos.filter((o) => ORGAOS.some((x) => x.id === o.id)).map((o) => {
@@ -215,35 +215,9 @@ export function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObje
       mesh.renderOrder = 3
       return { id: o.id, g, prep, mat, mesh }
     })
-    const capim = traco(it.capim, 1.3, PALETA.capim, 0.85, 1, { semProfundidade: true })
-    const esfera = new THREE.SphereGeometry(1, 10, 8)
-    const nuvens = [...it.graos, ...it.adubos].map((g) => {
-      const n = g.tam.length
-      const mat = new THREE.MeshBasicMaterial({ color: 0xffffff, transparent: true, opacity: 0.8, depthWrite: false, depthTest: false })
-      const inst = new THREE.InstancedMesh(esfera, mat, n)
-      const mx = new THREE.Matrix4()
-      for (let i = 0; i < n; i++) {
-        const t = g.tam[i]
-        mx.makeScale(t, t, t).setPosition(g.pos[i * 3], g.pos[i * 3 + 1], g.pos[i * 3 + 2])
-        inst.setMatrixAt(i, mx)
-      }
-      inst.renderOrder = 1
-      inst.frustumCulled = false
-      return { id: g.id, inst, mat }
-    })
-    return { orgaos, capim, nuvens }
+    return { orgaos }
   }, [it])
-  useResolucao(useMemo(() => [obj.capim.mat], [obj]))
-  // cores: natural ou dependência externa
-  useEffect(() => {
-    for (const n of obj.nuvens) {
-      const ins = INSUMOS_ANIMAL.find((x) => x.id === n.id)!
-      n.mat.color.set(p.lente === 'dependencia' ? COR_DEP[ins.dep] : ins.cor)
-    }
-    const pasto = INSUMOS_ANIMAL.find((x) => x.id === 'pasto')!
-    obj.capim.mat.color.set(p.lente === 'dependencia' ? COR_DEP[pasto.dep] : pasto.cor)
-  }, [obj, p.lente])
-  // níveis de cada órgão e de cada insumo, amortecidos: o escolhido acende, os outros recuam devagar
+  // níveis de cada órgão, amortecidos: o escolhido acende, os outros recuam devagar
   const nivel = useMemo(() => new Map<string, number>(), [])
   const amortece = (id: string, alvo: number, d: number) => {
     const v = expo(nivel.get(id) ?? alvo, alvo, d, TAXA_FADE * 1.6)
@@ -267,15 +241,6 @@ export function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObje
       // só sugerido, ele não pode tapar o que está à frente (a peça, o gráfico)
       o.prep.visible = f > 0.2 && a.vis[sexo] > 0.6
     }
-    const insHover = hv?.tipo === 'insumo' ? hv.id : null
-    for (const n of obj.nuvens) {
-      const ins = INSUMOS_ANIMAL.find((x) => x.id === n.id)!
-      const base = ins.grupo === 'adubo' ? (p.lente === 'dependencia' ? 0.9 : 0.45) : 0.85
-      n.mat.opacity = f * amortece(`i-${n.id}`, insHover ? (insHover === n.id ? 1 : 0.2) : base, d)
-      n.inst.visible = f > 0.01
-    }
-    obj.capim.mat.opacity = f * amortece('i-pasto', insHover ? (insHover === 'pasto' ? 1 : 0.2) : 0.8, d)
-    obj.capim.obj.visible = f > 0.01
   })
   return (
     <group>
@@ -312,10 +277,6 @@ export function InteriorCena(p: { it: Interior; sexo: Sexo; anim: MutableRefObje
             }
           />
         </group>
-      ))}
-      <primitive object={obj.capim.obj} />
-      {obj.nuvens.map((n) => (
-        <primitive key={n.id} object={n.inst} />
       ))}
     </group>
   )
