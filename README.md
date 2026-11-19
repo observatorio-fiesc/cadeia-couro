@@ -14,9 +14,27 @@ Painel de análise feito com dados e documentos públicos; não é publicação 
 | Cone 3D | `#cone` | A cadeia de oferta em cone, com lentes: importado, Ormuz, China e confiança |
 | Cadeia | `#cadeia` | Árvore de dependências de cada elo |
 | Logística no Brasil | `#brasil` | Rotas das plantas até os portos |
-| Insumos no mundo | `#mundo` | Origem das importações de cada insumo |
-| Ormuz 2026 | `#ormuz` | O fechamento do estreito e os insumos expostos |
-| Mercados e casos | `#mercados` | Tarifas dos EUA, produção de bovinos e luxo europeu |
+| Mercado externo | `#externo` | O mapa-múndi do Centro de comando do painel-comandante, na paleta do couro (chão curvo, costas, fronteiras e, a pedido, a densidade do tráfego de navios), com a gramática dos Cenários estratégicos. Na faixa, depois da aba, **Oferta** ou **Demanda** e, ao lado, só as análises desse lado; no alto, a linha do tempo com as passadas e o ▶; à esquerda, só um número e uma linha; acima da faixa, quando a passada tem, um infográfico; embaixo, no meio, **Exportações** ou **Importações** (um toque abre a outra); no canto inferior direito, o quadro dos produtos. Cada passada leva a câmera a um lugar; de perto, o detalhe 1:10m (portos, ferrovias, estradas). Ver abaixo |
+
+## A aba Mercado externo
+
+Segue os Cenários estratégicos do painel-comandante (a vista Ormuz do visualizador do submarino): cada análise é uma sequência de passadas, e cada passada leva a câmera a um lugar, mostra o que importa ali e escreve à esquerda só um número e uma linha. As setas do teclado passam de passada, o espaço toca a sequência, "]" mostra ou esconde o quadro dos produtos e Esc devolve a câmera ao enquadramento da passada. Nas passadas em vídeo, os anos correm sozinhos (o ano fica à direita), e as rotas engrossam, afinam, aparecem e somem.
+
+| Sentido | Lado | Análise | Passadas |
+|---|---|---|---|
+| Exportações | Oferta | Ofertantes | Quem vende (vídeo 2015–2025: os maiores exportadores do mundo como peças de luz, com os seus destinos); De onde sai (zoom nas plantas, nas estradas e nos portos) |
+| | | Precificação | Preço por quilo (a treliça dos preços dos destinos no tempo, como Custos, flutuando acima do mapa); Quem paga mais e Quem paga menos (zoom no destino, com os polos do couro) |
+| | | Criticidade logística | Pontos de passagem (carga correndo pelas rotas e a parte do valor que passa por cada gargalo); Peste suína na China (o choque de demanda: da carne suína ao couro) |
+| | Demanda | Compradores | Para onde vai (vídeo 2015–2025); Para onde foi (quem ganhou e quem perdeu participação, com setas de um país ao outro) |
+| | | Mercados potenciais | Uma passada por região (periferia europeia, Sudeste Asiático, Uruguai, Noruega, África Ocidental), no último ano disponível de cada país: quanto compra de couro curtido e a parte do Brasil |
+| | | Mercado de luxo | O berço (Itália e França, os distritos e os curtumes das maisons); O que muda (vídeo dos fluxos de Itália e França e o mercado de luxo por região) |
+| | | Automotivo | Polos dos bancos; Elétricos (projeção da EIU) |
+| Importações | Oferta | Origens | De onde vem (vídeo 2015–2025); Quem domina (zoom na maior origem) |
+| | | Precificação | Preço por quilo (a treliça dos insumos) |
+| | | Criticidade logística | Pontos de passagem; Ormuz (o estreito fechado, os petroleiros parados) |
+| | Demanda | O curtume, O boi | Figuras: a linha do processo, com o que entra de fora em cada etapa (valor e maior origem) |
+
+O endereço guarda a passada: `?vista=externo&sentido=imp&analise=criticidade&passo=1#externo` abre o estreito de Ormuz.
 
 ## Requisitos
 
@@ -53,6 +71,7 @@ No servidor local, a URL também aceita parâmetros que abrem um estado pronto. 
 Outros scripts em `scripts/`:
 
 - `node scripts/capturar-uma.mjs <url> <arquivo.png> [1600x900] [espera-ms]`: uma captura;
+- `node scripts/capturar-externo.mjs <pasta> [espera-ms] [1600x900] [sentido:analise:passo[:produto] ...]`: as passadas da aba Mercado externo (sem argumento, todas), com os erros do console agrupados;
 - `node scripts/capturar-estados.mjs <pasta> <espera-ms> nome=consulta ...`: vários estados da aba Modelo 3D num só navegador;
 - `node scripts/testar-forma.ts`: confere a geometria do boi e da vaca (o Node 24 roda TypeScript direto).
 
@@ -76,6 +95,9 @@ cadeia-couro-viposa/
     ├── lib/                formatação de números, projeções de mapa, layout do cone e lentes
     ├── estilos/            CSS global e tokens de cor
     ├── modelo3d/           aba Modelo 3D (ver abaixo)
+    ├── externo/            aba Mercado externo: chão curvo e projeção (geo.ts), rotas e gargalos do mar (rotas.ts),
+    │                       carga dos dados (dados.ts), o palco do mapa (Mapa.tsx), as análises e passadas (passos.tsx),
+    │                       a folha e o infográfico (Folha.tsx), as figuras (Figuras.tsx) e as tabelas do relatório (tabelas.ts)
     └── vistas/             uma vista por aba
 ```
 
@@ -110,6 +132,11 @@ Os arquivos de `public/data/` são gerados pelos scripts em Python de `../Painel
 | `logistica.json` | Plantas, portos e rotas | OSRM sobre o OpenStreetMap |
 | `mercados.json` | Exportações por destino e casos | Comex Stat, por domicílio fiscal |
 | `paises.json` | Nome e ponto de rótulo de cada país; nome do Comex para código ISO | Natural Earth; tabela de países do Comex |
+| `externo.json` | Aba Mercado externo: exportações por país, estágio e ano em US$ e em toneladas (2015–2025), preço por quilo por ano e por mês (até o último mês de 2026), importações por insumo, origem e ano, carne bovina para a China, exposição a Ormuz direta e de segunda ordem. Gerado por `preparar_externo.py`; as tabelas do relatório (Bain, EIU, maisons, polos) ficam em `src/externo/tabelas.ts` | Comex Stat (arquivos completos); UN Comtrade 2024 |
+| `couro-mundo.json` | Quem exporta cada produto da cadeia no mundo, ano a ano (2015–2025), os destinos dos maiores exportadores e o couro curtido comprado por país, do mundo e do Brasil. Gerado por `baixar_comtrade.py` (API pública do Comtrade, com cota por hora: o script guarda cada resposta e espera a cota voltar). Sem ele, a aba usa só o Comex | UN Comtrade, declarado por cada país |
+| `geo/detalhes.json` | O detalhe dos zooms: costa, fronteiras, portos, ferrovias, estradas principais e cidades em 13 janelas (Golfo, Itália, França, China, Vietnã, Brasil, Malaca, Suez, Gibraltar, Panamá, Cabo, México, Europa central). Gerado por `preparar_detalhes.py` | Natural Earth 1:10m |
+| `geo/mundo50.json` | Países (para pintar e apontar), linhas de costa e fronteiras terrestres, nomes em português do Brasil. Gerado por `preparar_mundo50.py` | Natural Earth 1:50m |
+| `mundo/agua.png`, `mundo/grade-presenca.*` | Máscara do mar e grade de tráfego de navios (0,1°), copiadas do atlas do painel-comandante | Natural Earth; Global Fishing Watch, 30 dias até 18/10/2026, CC BY-NC 4.0 |
 
 A química do Modelo 3D usa as faixas do BREF europeu de curtumes (2013) com um valor ilustrativo dentro de cada faixa: a receita da Viposa não é pública. As fontes completas ficam no botão "Fontes e definições" do painel.
 
